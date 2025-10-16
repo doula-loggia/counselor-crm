@@ -598,7 +598,22 @@ def export_clients():
 @app.route('/export/sessions')
 @login_required
 def export_sessions():
-    return send_file(SESSIONS_CSV,
+    sessions_df = pd.read_csv(SESSIONS_CSV, encoding='utf-8-sig')
+    clients_df = pd.read_csv(CLIENTS_CSV, encoding='utf-8-sig')
+    
+    if not sessions_df.empty:
+        sessions_df = sessions_df.merge(
+            clients_df[['client_id', 'name']],
+            on='client_id',
+            how='left'
+        )
+        cols = ['session_id', 'client_id', 'name'] + [col for col in sessions_df.columns if col not in ['session_id', 'client_id', 'name']]
+        sessions_df = sessions_df[cols]
+    
+    export_path = f'data/sessions_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    sessions_df.to_csv(export_path, index=False, encoding='utf-8-sig')
+    
+    return send_file(export_path,
                     as_attachment=True,
                     download_name=f'sessions_{datetime.now().strftime("%Y%m%d")}.csv',
                     mimetype='text/csv')
