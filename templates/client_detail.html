@@ -79,7 +79,7 @@
                 <th>납부</th>
                 <th>결제수단</th>
                 <th>평가</th>
-                <th>상세</th>
+                <th>관리</th>
             </tr>
         </thead>
         <tbody>
@@ -106,7 +106,8 @@
                     {% endif %}
                 </td>
                 <td>
-                    <a href="/sessions/{{ session.session_id }}" style="color: #3498db; text-decoration: none;">보기</a>
+                    <a href="/sessions/{{ session.session_id }}" style="color: #3498db; text-decoration: none; margin-right: 0.5rem;">보기</a>
+                    <a href="/sessions/{{ session.session_id }}/edit" style="color: #27ae60; text-decoration: none;">수정</a>
                 </td>
             </tr>
             {% endfor %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}회기 정보 수정 - 치료사 클라이언트 관리 시스템{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 1.5rem;">회기 정보 수정</h2>
+
+<div class="card">
+    <form method="POST">
+        <div class="form-group">
+            <label for="client_id">내담자 *</label>
+            <select id="client_id" name="client_id" required>
+                <option value="">내담자를 선택하세요</option>
+                {% for client in clients %}
+                <option value="{{ client.client_id }}" {% if client.client_id == session_data.client_id %}selected{% endif %}>{{ client.name }} ({{ client.client_id }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="date">회기 날짜 *</label>
+            <input type="date" id="date" name="date" value="{{ session_data.date }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="duration_minutes">시간(분)</label>
+            <input type="number" id="duration_minutes" name="duration_minutes" value="{{ session_data.duration_minutes }}" min="0">
+        </div>
+        
+        <div class="form-group">
+            <label for="mode">모드</label>
+            <select id="mode" name="mode">
+                <option value="대면" {% if session_data.mode == '대면' %}selected{% endif %}>대면</option>
+                <option value="온라인" {% if session_data.mode == '온라인' %}selected{% endif %}>온라인</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="goals">목표</label>
+            <textarea id="goals" name="goals" placeholder="이번 회기의 목표를 입력하세요">{{ session_data.goals }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="interventions">중재/개입</label>
+            <textarea id="interventions" name="interventions" placeholder="사용한 기법이나 중재를 입력하세요">{{ session_data.interventions }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">회기 노트</label>
+            <textarea id="notes" name="notes" placeholder="회기 내용 메모">{{ session_data.notes }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="next_actions">다음 단계</label>
+            <textarea id="next_actions" name="next_actions" placeholder="다음 회기까지 할 일이나 숙제">{{ session_data.next_actions }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="next_session_date">다음 회기 날짜</label>
+            <input type="date" id="next_session_date" name="next_session_date" value="{{ session_data.next_session_date }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="fee">비용(원)</label>
+            <input type="number" id="fee" name="fee" value="{{ session_data.fee }}" min="0" placeholder="80000">
+        </div>
+        
+        <div class="form-group">
+            <label for="paid">납부 여부</label>
+            <select id="paid" name="paid">
+                <option value="N" {% if session_data.paid == 'N' %}selected{% endif %}>미납</option>
+                <option value="Y" {% if session_data.paid == 'Y' %}selected{% endif %}>완납</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="payment_method">결제수단</label>
+            <select id="payment_method" name="payment_method">
+                <option value="" {% if not session_data.payment_method %}selected{% endif %}>선택안함</option>
+                <option value="현금" {% if session_data.payment_method == '현금' %}selected{% endif %}>현금</option>
+                <option value="카드" {% if session_data.payment_method == '카드' %}selected{% endif %}>카드</option>
+                <option value="바우처" {% if session_data.payment_method == '바우처' %}selected{% endif %}>바우처</option>
+                <option value="무료" {% if session_data.payment_method == '무료' %}selected{% endif %}>무료</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="rating">평가 (1-5)</label>
+            <select id="rating" name="rating">
+                <option value="" {% if not session_data.rating %}selected{% endif %}>선택안함</option>
+                <option value="1" {% if session_data.rating == '1' %}selected{% endif %}>1 - 매우 낮음</option>
+                <option value="2" {% if session_data.rating == '2' %}selected{% endif %}>2 - 낮음</option>
+                <option value="3" {% if session_data.rating == '3' %}selected{% endif %}>3 - 보통</option>
+                <option value="4" {% if session_data.rating == '4' %}selected{% endif %}>4 - 좋음</option>
+                <option value="5" {% if session_data.rating == '5' %}selected{% endif %}>5 - 매우 좋음</option>
+            </select>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit">저장</button>
+            <a href="/sessions/{{ session_data.session_id }}" class="btn btn-secondary">취소</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

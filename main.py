@@ -343,6 +343,43 @@ def session_detail(session_id):
     session_info = session_data.fillna('').to_dict('records')[0]
     return render_template('session_detail.html', session_data=session_info)
 
+@app.route('/sessions/<session_id>/edit', methods=['GET', 'POST'])
+@login_required
+def session_edit(session_id):
+    sessions_df = pd.read_csv(SESSIONS_CSV, encoding='utf-8-sig')
+    clients_df = pd.read_csv(CLIENTS_CSV, encoding='utf-8-sig')
+    
+    session_data = sessions_df[sessions_df['session_id'] == session_id]
+    if session_data.empty:
+        flash('회기를 찾을 수 없습니다.', 'error')
+        return redirect(url_for('sessions_list'))
+    
+    if request.method == 'POST':
+        idx = sessions_df[sessions_df['session_id'] == session_id].index[0]
+        
+        sessions_df.at[idx, 'client_id'] = request.form.get('client_id')
+        sessions_df.at[idx, 'date'] = request.form.get('date')
+        sessions_df.at[idx, 'duration_minutes'] = request.form.get('duration_minutes')
+        sessions_df.at[idx, 'mode'] = request.form.get('mode')
+        sessions_df.at[idx, 'goals'] = request.form.get('goals')
+        sessions_df.at[idx, 'interventions'] = request.form.get('interventions')
+        sessions_df.at[idx, 'notes'] = request.form.get('notes')
+        sessions_df.at[idx, 'next_actions'] = request.form.get('next_actions')
+        sessions_df.at[idx, 'next_session_date'] = request.form.get('next_session_date')
+        sessions_df.at[idx, 'fee'] = request.form.get('fee')
+        sessions_df.at[idx, 'paid'] = request.form.get('paid')
+        sessions_df.at[idx, 'payment_method'] = request.form.get('payment_method')
+        sessions_df.at[idx, 'rating'] = request.form.get('rating')
+        
+        sessions_df.to_csv(SESSIONS_CSV, index=False, encoding='utf-8-sig')
+        
+        flash('회기 정보가 수정되었습니다.', 'success')
+        return redirect(url_for('session_detail', session_id=session_id))
+    
+    session_info = session_data.fillna('').to_dict('records')[0]
+    clients = clients_df.to_dict('records')
+    return render_template('session_edit.html', session_data=session_info, clients=clients)
+
 @app.route('/sessions/<session_id>/upload-transcript', methods=['POST'])
 @login_required
 def upload_transcript(session_id):
