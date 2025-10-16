@@ -28,7 +28,12 @@
         </tr>
         <tr>
             <th>출생연도</th>
-            <td>{% if client.birth_year %}{{ client.birth_year | int }}{% endif %}</td>
+            <td>
+                {% if client.birth_year %}
+                    {{ client.birth_year | int }}
+                    <span id="age_display" style="color: #7f8c8d; margin-left: 0.5rem;"></span>
+                {% endif %}
+            </td>
         </tr>
         <tr>
             <th>성별</th>
@@ -118,5 +123,16 @@
     </p>
     {% endif %}
 </div>
+
+<script>
+const birthYear = {{ client.birth_year | int if client.birth_year else 0 }};
+const ageDisplay = document.getElementById('age_display');
+
+if (birthYear > 0) {
+    const currentYear = new Date().getFullYear();
+    const age = currentYear - birthYear;
+    ageDisplay.textContent = `(만 ${age}세)`;
+}
+</script>
 
 {% endblock %}
