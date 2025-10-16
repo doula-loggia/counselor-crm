@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}회기 상세 - 심리상담사 내담자 관리 시스템{% endblock %}
+{% block title %}{{ session_data.name }} - 회기 상세{% endblock %}
 
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-    <h2>회기 상세</h2>
+    <h2>회기 상세 - {{ session_data.name }} 님</h2>
     <div style="display: flex; gap: 0.5rem;">
         <a href="/sessions/{{ session_data.session_id }}/edit" class="btn" style="background: #27ae60;">수정</a>
         <a href="/sessions" class="btn btn-secondary">목록으로</a>
