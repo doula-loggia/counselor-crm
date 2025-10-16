@@ -57,6 +57,28 @@
             <th>태그</th>
             <td>{{ client.tags }}</td>
         </tr>
+        {% if client.medical_history %}
+        <tr>
+            <th>과거병력</th>
+            <td style="white-space: pre-wrap;">{{ client.medical_history }}</td>
+        </tr>
+        {% endif %}
+        {% if client.counseling_history %}
+        <tr>
+            <th>상담이력</th>
+            <td style="white-space: pre-wrap;">{{ client.counseling_history }}</td>
+        </tr>
+        {% endif %}
+        {% if client.psychological_test_file %}
+        <tr>
+            <th>심리검사 파일</th>
+            <td>
+                <a href="/download/psychological_test/{{ client.client_id }}" style="color: #3498db; text-decoration: none;">
+                    📄 {{ client.psychological_test_file }} (다운로드)
+                </a>
+            </td>
+        </tr>
+        {% endif %}
         {% if client.notes %}
         <tr>
             <th>메모</th>

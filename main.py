@@ -9,6 +9,7 @@ from openai import OpenAI
 import PyPDF2
 from docx import Document
 import olefile
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SESSION_SECRET', secrets.token_hex(32))
@@ -19,6 +20,7 @@ SESSIONS_CSV = 'data/sessions.csv'
 UPLOAD_FOLDER = 'data/transcripts'
 AUDIO_FOLDER = 'data/audio'
 PSYCH_TEST_FOLDER = 'data/psychological_tests'
+ALLOWED_PSYCH_TEST_EXTENSIONS = {'.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png'}
 
 openai_client = None
 if os.environ.get('OPENAI_API_KEY'):
@@ -219,8 +221,26 @@ def client_new():
     clients_df = pd.read_csv(CLIENTS_CSV, encoding='utf-8-sig')
     
     if request.method == 'POST':
+        client_id = generate_client_id()
+        
+        psychological_test_filename = ''
+        if 'psychological_test' in request.files:
+            file = request.files['psychological_test']
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+                file_ext = os.path.splitext(filename)[1].lower()
+                
+                if file_ext not in ALLOWED_PSYCH_TEST_EXTENSIONS:
+                    flash(f'허용되지 않는 파일 형식입니다. PDF, DOC, DOCX, TXT, JPG, PNG 파일만 업로드 가능합니다.', 'error')
+                    return redirect(url_for('client_new'))
+                
+                unique_filename = f"{client_id}_{filename}"
+                file_path = os.path.join(PSYCH_TEST_FOLDER, unique_filename)
+                file.save(file_path)
+                psychological_test_filename = unique_filename
+        
         new_client = {
-            'client_id': generate_client_id(),
+            'client_id': client_id,
             'name': request.form.get('name'),
             'phone': request.form.get('phone'),
             'email': request.form.get('email'),
@@ -229,7 +249,10 @@ def client_new():
             'first_session_date': request.form.get('first_session_date'),
             'status': 'active',
             'tags': request.form.get('tags'),
-            'notes': request.form.get('notes')
+            'notes': request.form.get('notes'),
+            'medical_history': request.form.get('medical_history'),
+            'counseling_history': request.form.get('counseling_history'),
+            'psychological_test_file': psychological_test_filename
         }
         
         clients_df = pd.concat([clients_df, pd.DataFrame([new_client])], ignore_index=True)
@@ -291,6 +314,23 @@ def client_edit(client_id):
         clients_df.at[idx, 'status'] = request.form.get('status')
         clients_df.at[idx, 'tags'] = request.form.get('tags')
         clients_df.at[idx, 'notes'] = request.form.get('notes')
+        clients_df.at[idx, 'medical_history'] = request.form.get('medical_history')
+        clients_df.at[idx, 'counseling_history'] = request.form.get('counseling_history')
+        
+        if 'psychological_test' in request.files:
+            file = request.files['psychological_test']
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+                file_ext = os.path.splitext(filename)[1].lower()
+                
+                if file_ext not in ALLOWED_PSYCH_TEST_EXTENSIONS:
+                    flash(f'허용되지 않는 파일 형식입니다. PDF, DOC, DOCX, TXT, JPG, PNG 파일만 업로드 가능합니다.', 'error')
+                    return redirect(url_for('client_edit', client_id=client_id))
+                
+                unique_filename = f"{client_id}_{filename}"
+                file_path = os.path.join(PSYCH_TEST_FOLDER, unique_filename)
+                file.save(file_path)
+                clients_df.at[idx, 'psychological_test_file'] = unique_filename
         
         clients_df.to_csv(CLIENTS_CSV, index=False, encoding='utf-8-sig')
         
@@ -646,6 +686,31 @@ def monthly_revenue():
                          total_revenue=total_revenue,
                          total_paid=total_paid,
                          total_unpaid=total_unpaid)
+
+@app.route('/download/psychological_test/<client_id>')
+@login_required
+def download_psychological_test(client_id):
+    clients_df = pd.read_csv(CLIENTS_CSV, encoding='utf-8-sig')
+    client_data = clients_df[clients_df['client_id'] == client_id]
+    
+    if client_data.empty:
+        flash('내담자를 찾을 수 없습니다.', 'error')
+        return redirect(url_for('clients_list'))
+    
+    client = client_data.fillna('').to_dict('records')[0]
+    filename = client.get('psychological_test_file', '')
+    
+    if not filename:
+        flash('심리검사 파일이 없습니다.', 'error')
+        return redirect(url_for('client_detail', client_id=client_id))
+    
+    file_path = os.path.join(PSYCH_TEST_FOLDER, filename)
+    
+    if not os.path.exists(file_path):
+        flash('파일을 찾을 수 없습니다.', 'error')
+        return redirect(url_for('client_detail', client_id=client_id))
+    
+    return send_file(file_path, as_attachment=True, download_name=filename)
 
 if __name__ == '__main__':
     init_csv_files()
