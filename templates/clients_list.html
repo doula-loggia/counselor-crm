@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}내담자 목록 - 치료사 클라이언트 관리 시스템{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2>내담자 목록</h2>
+    <a href="/clients/new" class="btn">새 내담자 추가</a>
+</div>
+
+<div class="card">
+    <form method="GET" class="search-box">
+        <input type="text" name="search" placeholder="이름 또는 태그로 검색..." value="{{ search_query }}">
+        <button type="submit">검색</button>
+        {% if search_query %}
+            <a href="/clients" class="btn btn-secondary">전체보기</a>
+        {% endif %}
+    </form>
+    
+    {% if clients %}
+    <table>
+        <thead>
+            <tr>
+                <th>이름</th>
+                <th>전화번호</th>
+                <th>이메일</th>
+                <th>첫 회기 날짜</th>
+                <th>상태</th>
+                <th>태그</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr>
+                <td><strong>{{ client.name }}</strong></td>
+                <td>{{ client.phone }}</td>
+                <td>{{ client.email }}</td>
+                <td>{{ client.first_session_date }}</td>
+                <td>
+                    {% if client.status == 'active' %}
+                        <span style="color: #27ae60; font-weight: bold;">활성</span>
+                    {% else %}
+                        <span style="color: #95a5a6;">비활성</span>
+                    {% endif %}
+                </td>
+                <td>{{ client.tags }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #7f8c8d; padding: 2rem;">
+        {% if search_query %}
+            검색 결과가 없습니다.
+        {% else %}
+            등록된 내담자가 없습니다.
+        {% endif %}
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

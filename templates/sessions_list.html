@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}회기 목록 - 치료사 클라이언트 관리 시스템{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2>회기 목록</h2>
+    <a href="/sessions/new" class="btn">새 회기 추가</a>
+</div>
+
+<div class="card">
+    {% if sessions %}
+    <table>
+        <thead>
+            <tr>
+                <th>날짜</th>
+                <th>내담자</th>
+                <th>시간</th>
+                <th>모드</th>
+                <th>목표</th>
+                <th>비용</th>
+                <th>납부</th>
+                <th>평가</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for session in sessions %}
+            <tr>
+                <td>{{ session.date }}</td>
+                <td><strong>{{ session.name }}</strong></td>
+                <td>{{ session.duration_minutes }}분</td>
+                <td>{{ session.mode }}</td>
+                <td>{{ session.goals[:50] }}{% if session.goals|length > 50 %}...{% endif %}</td>
+                <td>{{ session.fee }}원</td>
+                <td>
+                    {% if session.paid == 'Y' %}
+                        <span style="color: #27ae60;">✓</span>
+                    {% else %}
+                        <span style="color: #e74c3c;">✗</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if session.rating %}
+                        {{ session.rating }}/5
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #7f8c8d; padding: 2rem;">
+        등록된 회기가 없습니다.
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}새 내담자 추가 - 치료사 클라이언트 관리 시스템{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 1.5rem;">새 내담자 추가</h2>
+
+<div class="card">
+    <form method="POST">
+        <div class="form-group">
+            <label for="name">이름 *</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="phone">전화번호</label>
+            <input type="tel" id="phone" name="phone" placeholder="010-1234-5678">
+        </div>
+        
+        <div class="form-group">
+            <label for="email">이메일</label>
+            <input type="email" id="email" name="email">
+        </div>
+        
+        <div class="form-group">
+            <label for="birth_year">출생연도</label>
+            <input type="number" id="birth_year" name="birth_year" placeholder="1990">
+        </div>
+        
+        <div class="form-group">
+            <label for="gender">성별</label>
+            <select id="gender" name="gender">
+                <option value="">선택안함</option>
+                <option value="남성">남성</option>
+                <option value="여성">여성</option>
+                <option value="기타">기타</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="first_session_date">첫 회기 날짜</label>
+            <input type="date" id="first_session_date" name="first_session_date">
+        </div>
+        
+        <div class="form-group">
+            <label for="tags">태그 (쉼표로 구분)</label>
+            <input type="text" id="tags" name="tags" placeholder="예: 불안, 우울, 대인관계">
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">메모</label>
+            <textarea id="notes" name="notes" placeholder="추가 정보나 메모를 입력하세요"></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit">저장</button>
+            <a href="/clients" class="btn btn-secondary">취소</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

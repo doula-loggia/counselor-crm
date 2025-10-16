@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}로그인 - 치료사 클라이언트 관리 시스템{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 400px; margin: 4rem auto;">
+    <h2 style="text-align: center; margin-bottom: 2rem;">로그인</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="password">비밀번호</label>
+            <input type="password" id="password" name="password" required autofocus>
+        </div>
+        <button type="submit" style="width: 100%;">로그인</button>
+    </form>
+    <p style="margin-top: 1.5rem; text-align: center; color: #7f8c8d; font-size: 0.9rem;">
+        Replit Secrets에 <code>SECRET_PASSWORD</code>를 설정해주세요.
+    </p>
+</div>
+{% endblock %}

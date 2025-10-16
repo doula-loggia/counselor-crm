@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}새 회기 추가 - 치료사 클라이언트 관리 시스템{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 1.5rem;">새 회기 추가</h2>
+
+<div class="card">
+    <form method="POST">
+        <div class="form-group">
+            <label for="client_id">내담자 선택 *</label>
+            <select id="client_id" name="client_id" required>
+                <option value="">내담자를 선택하세요</option>
+                {% for client in clients %}
+                <option value="{{ client.client_id }}">{{ client.name }} ({{ client.client_id }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="date">회기 날짜 *</label>
+            <input type="date" id="date" name="date" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="duration_minutes">시간(분)</label>
+            <input type="number" id="duration_minutes" name="duration_minutes" value="50" min="0">
+        </div>
+        
+        <div class="form-group">
+            <label for="mode">모드</label>
+            <select id="mode" name="mode">
+                <option value="대면">대면</option>
+                <option value="온라인">온라인</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="goals">목표</label>
+            <textarea id="goals" name="goals" placeholder="이번 회기의 목표를 입력하세요"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="interventions">중재/개입</label>
+            <textarea id="interventions" name="interventions" placeholder="사용한 기법이나 중재를 입력하세요"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">회기 노트</label>
+            <textarea id="notes" name="notes" placeholder="회기 내용 메모"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="next_actions">다음 단계</label>
+            <textarea id="next_actions" name="next_actions" placeholder="다음 회기까지 할 일이나 숙제"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="next_session_date">다음 회기 날짜</label>
+            <input type="date" id="next_session_date" name="next_session_date">
+        </div>
+        
+        <div class="form-group">
+            <label for="fee">비용(원)</label>
+            <input type="number" id="fee" name="fee" min="0" placeholder="80000">
+        </div>
+        
+        <div class="form-group">
+            <label for="paid">납부 여부</label>
+            <select id="paid" name="paid">
+                <option value="N">미납</option>
+                <option value="Y">완납</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="rating">평가 (1-5)</label>
+            <select id="rating" name="rating">
+                <option value="">선택안함</option>
+                <option value="1">1 - 매우 낮음</option>
+                <option value="2">2 - 낮음</option>
+                <option value="3">3 - 보통</option>
+                <option value="4">4 - 좋음</option>
+                <option value="5">5 - 매우 좋음</option>
+            </select>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit">저장</button>
+            <a href="/sessions" class="btn btn-secondary">취소</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
