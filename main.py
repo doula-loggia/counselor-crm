@@ -6,6 +6,9 @@ from functools import wraps
 import secrets
 import json
 from openai import OpenAI
+import PyPDF2
+from docx import Document
+import olefile
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SESSION_SECRET', secrets.token_hex(32))
@@ -60,6 +63,48 @@ def generate_session_id():
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     random_suffix = secrets.token_hex(2)
     return f"S-{timestamp}{random_suffix}"
+
+def extract_text_from_file(file):
+    filename = file.filename.lower()
+    
+    try:
+        if filename.endswith('.txt'):
+            return file.read().decode('utf-8')
+        
+        elif filename.endswith('.pdf'):
+            pdf_reader = PyPDF2.PdfReader(file)
+            text = ''
+            for page in pdf_reader.pages:
+                text += page.extract_text() + '\n'
+            return text.strip()
+        
+        elif filename.endswith('.docx'):
+            doc = Document(file)
+            text = ''
+            for paragraph in doc.paragraphs:
+                text += paragraph.text + '\n'
+            return text.strip()
+        
+        elif filename.endswith('.hwp'):
+            if olefile.isOleFile(file):
+                ole = olefile.OleFileIO(file)
+                if ole.exists('PrvText'):
+                    stream = ole.openstream('PrvText')
+                    data = stream.read()
+                    text = data.decode('utf-16', errors='ignore')
+                    return text.strip()
+                else:
+                    ole.close()
+                    return None
+            else:
+                return None
+        
+        else:
+            return None
+            
+    except Exception as e:
+        print(f"파일 읽기 오류: {e}")
+        return None
 
 def analyze_transcript(transcript_text):
     if not openai_client:
@@ -388,10 +433,9 @@ def upload_transcript(session_id):
     if 'transcript_file' in request.files:
         file = request.files['transcript_file']
         if file and file.filename:
-            try:
-                transcript_text = file.read().decode('utf-8')
-            except Exception as e:
-                flash(f'파일 읽기 오류: {str(e)}', 'error')
+            transcript_text = extract_text_from_file(file)
+            if transcript_text is None:
+                flash('파일 형식이 지원되지 않거나 파일을 읽을 수 없습니다. TXT, PDF, DOCX, HWP 파일을 사용해주세요.', 'error')
                 return redirect(url_for('session_detail', session_id=session_id))
     
     if not transcript_text:

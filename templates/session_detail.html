@@ -82,8 +82,8 @@
     <h3 style="margin-bottom: 1rem;">📝 축어록 업로드</h3>
     <form method="POST" action="/sessions/{{ session_data.session_id }}/upload-transcript" enctype="multipart/form-data">
         <div class="form-group">
-            <label for="transcript_file">파일 업로드 (TXT, 텍스트 파일)</label>
-            <input type="file" id="transcript_file" name="transcript_file" accept=".txt">
+            <label for="transcript_file">파일 업로드 (TXT, PDF, DOCX, HWP)</label>
+            <input type="file" id="transcript_file" name="transcript_file" accept=".txt,.pdf,.docx,.hwp,.doc">
         </div>
         
         <p style="text-align: center; color: #7f8c8d; margin: 1rem 0;">또는</p>
