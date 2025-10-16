@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}{{ client.name }} - 내담자 상세{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2>{{ client.name }} 님</h2>
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="/clients/{{ client.client_id }}/edit" class="btn">정보 수정</a>
+        <a href="/clients" class="btn btn-secondary">목록으로</a>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h3 style="margin-bottom: 1rem;">기본 정보</h3>
+    <table style="margin: 0;">
+        <tr>
+            <th style="width: 20%;">이름</th>
+            <td><strong>{{ client.name }}</strong></td>
+        </tr>
+        <tr>
+            <th>전화번호</th>
+            <td>{{ client.phone }}</td>
+        </tr>
+        <tr>
+            <th>이메일</th>
+            <td>{{ client.email }}</td>
+        </tr>
+        <tr>
+            <th>출생연도</th>
+            <td>{{ client.birth_year }}</td>
+        </tr>
+        <tr>
+            <th>성별</th>
+            <td>{{ client.gender }}</td>
+        </tr>
+        <tr>
+            <th>첫 회기 날짜</th>
+            <td>{{ client.first_session_date }}</td>
+        </tr>
+        <tr>
+            <th>상태</th>
+            <td>
+                {% if client.status == 'active' %}
+                    <span style="color: #27ae60; font-weight: bold;">활성</span>
+                {% else %}
+                    <span style="color: #95a5a6;">비활성</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>태그</th>
+            <td>{{ client.tags }}</td>
+        </tr>
+        {% if client.notes %}
+        <tr>
+            <th>메모</th>
+            <td style="white-space: pre-wrap;">{{ client.notes }}</td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3>회기 기록 ({{ sessions|length }}회)</h3>
+        <a href="/sessions/new" class="btn">새 회기 추가</a>
+    </div>
+    
+    {% if sessions %}
+    <table>
+        <thead>
+            <tr>
+                <th>날짜</th>
+                <th>시간</th>
+                <th>모드</th>
+                <th>목표</th>
+                <th>비용</th>
+                <th>납부</th>
+                <th>평가</th>
+                <th>상세</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for session in sessions %}
+            <tr>
+                <td>{{ session.date }}</td>
+                <td>{{ session.duration_minutes }}분</td>
+                <td>{{ session.mode }}</td>
+                <td>{{ session.goals[:50] }}{% if session.goals|length > 50 %}...{% endif %}</td>
+                <td>{% if session.fee %}{{ (session.fee | float / 10000) | int }}만원{% endif %}</td>
+                <td>
+                    {% if session.paid == 'Y' %}
+                        <span style="color: #27ae60;">✓</span>
+                    {% else %}
+                        <span style="color: #e74c3c;">✗</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if session.rating %}
+                        {{ session.rating }}/5
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/sessions/{{ session.session_id }}" style="color: #3498db; text-decoration: none;">보기</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #7f8c8d; padding: 2rem;">
+        아직 등록된 회기가 없습니다.
+    </p>
+    {% endif %}
+</div>
+
+{% endblock %}

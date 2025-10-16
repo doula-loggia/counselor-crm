@@ -186,6 +186,28 @@ def client_new():
     
     return render_template('client_form.html')
 
+@app.route('/clients/<client_id>')
+@login_required
+def client_detail(client_id):
+    clients_df = pd.read_csv(CLIENTS_CSV, encoding='utf-8-sig')
+    sessions_df = pd.read_csv(SESSIONS_CSV, encoding='utf-8-sig')
+    
+    client_data = clients_df[clients_df['client_id'] == client_id]
+    if client_data.empty:
+        flash('내담자를 찾을 수 없습니다.', 'error')
+        return redirect(url_for('clients_list'))
+    
+    client_info = client_data.fillna('').to_dict('records')[0]
+    
+    client_sessions = sessions_df[sessions_df['client_id'] == client_id]
+    if not client_sessions.empty:
+        client_sessions = client_sessions.sort_values('date', ascending=False)
+    
+    client_sessions = client_sessions.fillna('')
+    sessions = client_sessions.to_dict('records')
+    
+    return render_template('client_detail.html', client=client_info, sessions=sessions)
+
 @app.route('/clients/<client_id>/edit', methods=['GET', 'POST'])
 @login_required
 def client_edit(client_id):
