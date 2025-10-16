@@ -146,6 +146,10 @@ def logout():
 def clients_list():
     clients_df = pd.read_csv(CLIENTS_CSV, encoding='utf-8-sig')
     search_query = request.args.get('search', '').strip()
+    status_filter = request.args.get('status', '').strip()
+    
+    if status_filter:
+        clients_df = clients_df[clients_df['status'] == status_filter]
     
     if search_query:
         mask = (
@@ -157,7 +161,7 @@ def clients_list():
     clients_df = clients_df.fillna('')
     clients = clients_df.to_dict('records')
     
-    return render_template('clients_list.html', clients=clients, search_query=search_query)
+    return render_template('clients_list.html', clients=clients, search_query=search_query, status_filter=status_filter)
 
 @app.route('/clients/new', methods=['GET', 'POST'])
 @login_required

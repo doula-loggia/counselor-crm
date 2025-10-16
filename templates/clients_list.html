@@ -12,11 +12,21 @@
 </div>
 
 <div class="card">
+    <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+        <span style="font-weight: bold; color: #34495e;">상태:</span>
+        <a href="/clients" class="btn {% if not status_filter %}btn-secondary{% else %}btn{% endif %}" style="padding: 0.5rem 1rem; font-size: 0.9rem;">전체</a>
+        <a href="/clients?status=active" class="btn {% if status_filter == 'active' %}btn-secondary{% else %}btn{% endif %}" style="padding: 0.5rem 1rem; font-size: 0.9rem;">활성</a>
+        <a href="/clients?status=inactive" class="btn {% if status_filter == 'inactive' %}btn-secondary{% else %}btn{% endif %}" style="padding: 0.5rem 1rem; font-size: 0.9rem;">비활성</a>
+    </div>
+    
     <form method="GET" class="search-box">
         <input type="text" name="search" placeholder="이름 또는 태그로 검색..." value="{{ search_query }}">
+        {% if status_filter %}
+            <input type="hidden" name="status" value="{{ status_filter }}">
+        {% endif %}
         <button type="submit">검색</button>
         {% if search_query %}
-            <a href="/clients" class="btn btn-secondary">전체보기</a>
+            <a href="/clients{% if status_filter %}?status={{ status_filter }}{% endif %}" class="btn btn-secondary">검색 초기화</a>
         {% endif %}
     </form>
     
