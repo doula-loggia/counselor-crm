@@ -1,0 +1,54 @@
+You are Replit Agent. Build a **Python Flask** web app (Korean UI) for a single-therapist client history manager.
+
+=== Product Brief (MVP) ===
+Goal: One therapist tracks client history.
+User: Single therapist (single login).
+Persistence: CSV files (prototype).
+
+Data models:
+- clients.csv columns:
+  client_id, name, phone, email, birth_year, gender,
+  first_session_date, status (active/inactive), tags, notes
+- sessions.csv columns:
+  session_id, client_id (FK -> clients.client_id), date, duration_minutes,
+  mode (대면/온라인), goals, interventions, notes, next_actions,
+  next_session_date, fee, paid (Y/N), rating (1–5)
+
+Core features:
+1) Clients: list, add, search (by name/tags)
+2) Sessions: list, add (linked to a client)
+3) Export: download clients.csv and sessions.csv
+4) Auth: simple single-user login using one password from env var `SECRET_PASSWORD`
+5) Clean minimal HTML templates in Korean
+
+Out of scope for MVP:
+- Payments/invoicing, calendar sync, multi-user roles
+
+=== Tech Requirements ===
+- Python + Flask
+- Pandas for CSV read/write
+- Files to generate:
+  - requirements.txt (Flask, pandas)
+  - main.py (Flask app)
+  - templates/: base.html, login.html, clients_list.html, client_form.html,
+                 sessions_list.html, session_form.html
+  - Create empty clients.csv & sessions.csv on first run if missing
+- Add a README with run steps.
+- Provide a default `/` home, `/login`, `/clients`, `/clients/new`, `/sessions`, `/sessions/new`,
+  `/export/clients`, `/export/sessions`.
+
+=== Behavior ===
+- After login, show nav links: 홈, 내담자, 회기, CSV 내보내기, 로그아웃.
+- `/clients` table shows recent clients; search box filters by name or tags (case-insensitive).
+- `/clients/new` form fields: name, phone, email, birth_year, gender, tags, notes. Generate `client_id` as "C-XXXXXXXX".
+- `/sessions/new` requires selecting an existing client (dropdown), generates `session_id` as "S-XXXXXXXX".
+- CSV encoding: UTF-8 (utf-8-sig) to keep Korean fine.
+- If a CSV file doesn’t exist, app creates it with headers.
+
+=== Acceptance checklist ===
+- Running "pip install -r requirements.txt && python main.py" starts the app.
+- Without setting SECRET_PASSWORD, app should refuse login with a helpful message.
+- After setting SECRET_PASSWORD in Replit Secrets, login works and CRUD pages render.
+- Export endpoints download the CSVs.
+
+Please generate all files and ensure the app runs in Replit.
