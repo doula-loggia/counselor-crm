@@ -34,7 +34,7 @@ def init_csv_files():
         sessions_df = pd.DataFrame(columns=[
             'session_id', 'client_id', 'date', 'duration_minutes', 'mode',
             'goals', 'interventions', 'notes', 'next_actions',
-            'next_session_date', 'fee', 'paid', 'rating', 'transcript',
+            'next_session_date', 'fee', 'paid', 'payment_method', 'rating', 'transcript',
             'analysis_summary', 'analysis_stress', 'analysis_intervention',
             'analysis_alternatives', 'analysis_plan', 'analysis_emotions',
             'analysis_distortions', 'analysis_resistance'
@@ -298,6 +298,7 @@ def session_new():
             'next_session_date': request.form.get('next_session_date'),
             'fee': request.form.get('fee'),
             'paid': request.form.get('paid'),
+            'payment_method': request.form.get('payment_method'),
             'rating': request.form.get('rating'),
             'transcript': '',
             'analysis_summary': '',

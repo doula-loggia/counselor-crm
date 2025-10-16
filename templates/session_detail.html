@@ -43,6 +43,12 @@
             <th>비용</th>
             <td>{% if session_data.fee %}{{ (session_data.fee | float / 10000) | int }}만원{% endif %} ({% if session_data.paid == 'Y' %}<span style="color: #27ae60;">완납</span>{% else %}<span style="color: #e74c3c;">미납</span>{% endif %})</td>
         </tr>
+        {% if session_data.payment_method %}
+        <tr>
+            <th>결제수단</th>
+            <td>{{ session_data.payment_method }}</td>
+        </tr>
+        {% endif %}
     </table>
 </div>
 
