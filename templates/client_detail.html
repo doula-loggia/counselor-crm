@@ -99,7 +99,7 @@
         <thead>
             <tr>
                 <th>날짜</th>
-                <th>시간</th>
+                <th>이름</th>
                 <th>모드</th>
                 <th>목표</th>
                 <th>비용</th>
@@ -119,7 +119,7 @@
                         {{ session.date }}
                     </a>
                 </td>
-                <td>{{ session.duration_minutes }}분</td>
+                <td>{{ client.name }}</td>
                 <td>{{ session.mode }}</td>
                 <td>{{ session.goals[:50] }}{% if session.goals|length > 50 %}...{% endif %}</td>
                 <td>{% if session.fee %}{{ (session.fee | float / 10000) | int }}만원{% endif %}</td>
