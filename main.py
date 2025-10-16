@@ -18,6 +18,7 @@ CLIENTS_CSV = 'data/clients.csv'
 SESSIONS_CSV = 'data/sessions.csv'
 UPLOAD_FOLDER = 'data/transcripts'
 AUDIO_FOLDER = 'data/audio'
+PSYCH_TEST_FOLDER = 'data/psychological_tests'
 
 openai_client = None
 if os.environ.get('OPENAI_API_KEY'):
@@ -27,11 +28,13 @@ def init_csv_files():
     os.makedirs('data', exist_ok=True)
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     os.makedirs(AUDIO_FOLDER, exist_ok=True)
+    os.makedirs(PSYCH_TEST_FOLDER, exist_ok=True)
     
     if not os.path.exists(CLIENTS_CSV):
         clients_df = pd.DataFrame(columns=[
             'client_id', 'name', 'phone', 'email', 'birth_year', 'gender',
-            'first_session_date', 'status', 'tags', 'notes'
+            'first_session_date', 'status', 'tags', 'notes', 'medical_history',
+            'counseling_history', 'psychological_test_file'
         ])
         clients_df.to_csv(CLIENTS_CSV, index=False, encoding='utf-8-sig')
     
