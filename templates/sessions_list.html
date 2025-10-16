@@ -21,6 +21,7 @@
                 <th>비용</th>
                 <th>납부</th>
                 <th>평가</th>
+                <th>상세</th>
             </tr>
         </thead>
         <tbody>
@@ -45,6 +46,9 @@
                     {% else %}
                         -
                     {% endif %}
+                </td>
+                <td>
+                    <a href="/sessions/{{ session.session_id }}" style="color: #3498db; text-decoration: none;">보기</a>
                 </td>
             </tr>
             {% endfor %}

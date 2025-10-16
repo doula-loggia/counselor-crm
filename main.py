@@ -4,15 +4,24 @@ from flask import Flask, render_template, request, redirect, url_for, session, s
 from datetime import datetime
 from functools import wraps
 import secrets
+import json
+from openai import OpenAI
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SESSION_SECRET', secrets.token_hex(32))
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 CLIENTS_CSV = 'data/clients.csv'
 SESSIONS_CSV = 'data/sessions.csv'
+UPLOAD_FOLDER = 'data/transcripts'
+
+openai_client = None
+if os.environ.get('OPENAI_API_KEY'):
+    openai_client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 def init_csv_files():
     os.makedirs('data', exist_ok=True)
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     
     if not os.path.exists(CLIENTS_CSV):
         clients_df = pd.DataFrame(columns=[
@@ -25,7 +34,10 @@ def init_csv_files():
         sessions_df = pd.DataFrame(columns=[
             'session_id', 'client_id', 'date', 'duration_minutes', 'mode',
             'goals', 'interventions', 'notes', 'next_actions',
-            'next_session_date', 'fee', 'paid', 'rating'
+            'next_session_date', 'fee', 'paid', 'rating', 'transcript',
+            'analysis_summary', 'analysis_stress', 'analysis_intervention',
+            'analysis_alternatives', 'analysis_plan', 'analysis_emotions',
+            'analysis_distortions', 'analysis_resistance'
         ])
         sessions_df.to_csv(SESSIONS_CSV, index=False, encoding='utf-8-sig')
 
@@ -46,6 +58,48 @@ def generate_session_id():
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     random_suffix = secrets.token_hex(2)
     return f"S-{timestamp}{random_suffix}"
+
+def analyze_transcript(transcript_text):
+    if not openai_client:
+        return None
+    
+    try:
+        # the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        response = openai_client.chat.completions.create(
+            model="gpt-5",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "당신은 전문 임상심리상담 수퍼바이저입니다. 상담 축어록을 분석하여 내담자의 심리상태와 상담자의 개입을 전문적으로 평가합니다. 응답은 반드시 JSON 형식으로 제공하며, 각 항목은 한국어로 작성합니다."
+                },
+                {
+                    "role": "user",
+                    "content": f"""다음 상담 축어록을 분석하여 JSON 형식으로 응답해주세요:
+
+{transcript_text}
+
+다음 항목들을 분석하여 JSON으로 반환하세요:
+{{
+  "summary": "전체 이야기 요약 (3-5문장)",
+  "stress_factors": "주요 스트레스 요인 분석 (리스트 형태로)",
+  "intervention_eval": "상담자 개입에 대한 평가 (장점과 개선점)",
+  "alternatives": "더 나은 개입 대안 제안",
+  "future_plan": "이후 상담 계획 수립 가이드",
+  "emotions": "내담자의 주요 감정 분석",
+  "cognitive_distortions": "인지왜곡 패턴 (있다면)",
+  "resistance": "저항 패턴 분석 (있다면)"
+}}"""
+                }
+            ],
+            response_format={"type": "json_object"},
+            max_completion_tokens=4096
+        )
+        
+        result = json.loads(response.choices[0].message.content)
+        return result
+    except Exception as e:
+        print(f"AI 분석 오류: {e}")
+        return None
 
 @app.route('/')
 @login_required
@@ -171,7 +225,16 @@ def session_new():
             'next_session_date': request.form.get('next_session_date'),
             'fee': request.form.get('fee'),
             'paid': request.form.get('paid'),
-            'rating': request.form.get('rating')
+            'rating': request.form.get('rating'),
+            'transcript': '',
+            'analysis_summary': '',
+            'analysis_stress': '',
+            'analysis_intervention': '',
+            'analysis_alternatives': '',
+            'analysis_plan': '',
+            'analysis_emotions': '',
+            'analysis_distortions': '',
+            'analysis_resistance': ''
         }
         
         sessions_df = pd.concat([sessions_df, pd.DataFrame([new_session])], ignore_index=True)
@@ -182,6 +245,74 @@ def session_new():
     
     clients = clients_df.to_dict('records')
     return render_template('session_form.html', clients=clients)
+
+@app.route('/sessions/<session_id>')
+@login_required
+def session_detail(session_id):
+    sessions_df = pd.read_csv(SESSIONS_CSV, encoding='utf-8-sig')
+    clients_df = pd.read_csv(CLIENTS_CSV, encoding='utf-8-sig')
+    
+    session_data = sessions_df[sessions_df['session_id'] == session_id]
+    if session_data.empty:
+        flash('회기를 찾을 수 없습니다.', 'error')
+        return redirect(url_for('sessions_list'))
+    
+    session_data = session_data.merge(
+        clients_df[['client_id', 'name']],
+        on='client_id',
+        how='left'
+    )
+    
+    session_info = session_data.fillna('').to_dict('records')[0]
+    return render_template('session_detail.html', session=session_info)
+
+@app.route('/sessions/<session_id>/upload-transcript', methods=['POST'])
+@login_required
+def upload_transcript(session_id):
+    if 'transcript_file' in request.files:
+        file = request.files['transcript_file']
+        if file and file.filename:
+            transcript_text = file.read().decode('utf-8')
+        else:
+            flash('파일을 선택해주세요.', 'error')
+            return redirect(url_for('session_detail', session_id=session_id))
+    else:
+        transcript_text = request.form.get('transcript_text', '').strip()
+    
+    if not transcript_text:
+        flash('축어록 내용이 비어있습니다.', 'error')
+        return redirect(url_for('session_detail', session_id=session_id))
+    
+    sessions_df = pd.read_csv(SESSIONS_CSV, encoding='utf-8-sig')
+    idx = sessions_df[sessions_df['session_id'] == session_id].index
+    
+    if len(idx) == 0:
+        flash('회기를 찾을 수 없습니다.', 'error')
+        return redirect(url_for('sessions_list'))
+    
+    sessions_df.loc[idx, 'transcript'] = transcript_text
+    
+    if openai_client:
+        flash('축어록을 업로드하고 AI 분석을 시작합니다...', 'success')
+        analysis = analyze_transcript(transcript_text)
+        
+        if analysis:
+            sessions_df.loc[idx, 'analysis_summary'] = analysis.get('summary', '')
+            sessions_df.loc[idx, 'analysis_stress'] = analysis.get('stress_factors', '')
+            sessions_df.loc[idx, 'analysis_intervention'] = analysis.get('intervention_eval', '')
+            sessions_df.loc[idx, 'analysis_alternatives'] = analysis.get('alternatives', '')
+            sessions_df.loc[idx, 'analysis_plan'] = analysis.get('future_plan', '')
+            sessions_df.loc[idx, 'analysis_emotions'] = analysis.get('emotions', '')
+            sessions_df.loc[idx, 'analysis_distortions'] = analysis.get('cognitive_distortions', '')
+            sessions_df.loc[idx, 'analysis_resistance'] = analysis.get('resistance', '')
+            flash('AI 분석이 완료되었습니다!', 'success')
+        else:
+            flash('축어록이 저장되었지만 AI 분석에 실패했습니다.', 'error')
+    else:
+        flash('축어록이 저장되었습니다. OpenAI API 키를 설정하면 AI 분석을 사용할 수 있습니다.', 'success')
+    
+    sessions_df.to_csv(SESSIONS_CSV, index=False, encoding='utf-8-sig')
+    return redirect(url_for('session_detail', session_id=session_id))
 
 @app.route('/export/clients')
 @login_required

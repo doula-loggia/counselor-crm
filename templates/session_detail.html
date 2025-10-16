@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}회기 상세 - 치료사 클라이언트 관리 시스템{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2>회기 상세</h2>
+    <a href="/sessions" class="btn btn-secondary">목록으로</a>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h3 style="margin-bottom: 1rem;">기본 정보</h3>
+    <table style="margin: 0;">
+        <tr>
+            <th style="width: 20%;">내담자</th>
+            <td><strong>{{ session.name }}</strong></td>
+        </tr>
+        <tr>
+            <th>날짜</th>
+            <td>{{ session.date }}</td>
+        </tr>
+        <tr>
+            <th>시간</th>
+            <td>{{ session.duration_minutes }}분</td>
+        </tr>
+        <tr>
+            <th>모드</th>
+            <td>{{ session.mode }}</td>
+        </tr>
+        <tr>
+            <th>목표</th>
+            <td>{{ session.goals }}</td>
+        </tr>
+        <tr>
+            <th>중재/개입</th>
+            <td>{{ session.interventions }}</td>
+        </tr>
+        <tr>
+            <th>회기 노트</th>
+            <td>{{ session.notes }}</td>
+        </tr>
+        <tr>
+            <th>비용</th>
+            <td>{{ session.fee }}원 ({% if session.paid == 'Y' %}<span style="color: #27ae60;">완납</span>{% else %}<span style="color: #e74c3c;">미납</span>{% endif %})</td>
+        </tr>
+    </table>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h3 style="margin-bottom: 1rem;">축어록 업로드</h3>
+    <form method="POST" action="/sessions/{{ session.session_id }}/upload-transcript" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="transcript_file">파일 업로드 (TXT, 텍스트 파일)</label>
+            <input type="file" id="transcript_file" name="transcript_file" accept=".txt">
+        </div>
+        
+        <p style="text-align: center; color: #7f8c8d; margin: 1rem 0;">또는</p>
+        
+        <div class="form-group">
+            <label for="transcript_text">직접 입력</label>
+            <textarea id="transcript_text" name="transcript_text" rows="8" placeholder="축어록 내용을 직접 입력하세요...">{{ session.transcript }}</textarea>
+        </div>
+        
+        <button type="submit">업로드 및 AI 분석</button>
+        <p style="margin-top: 0.5rem; color: #7f8c8d; font-size: 0.9rem;">
+            * OpenAI API 키가 설정되어 있으면 자동으로 AI 분석이 진행됩니다.
+        </p>
+    </form>
+</div>
+
+{% if session.analysis_summary %}
+<div class="card" style="background: #f8f9fa; border-left: 4px solid #3498db;">
+    <h3 style="margin-bottom: 1.5rem; color: #2c3e50;">🤖 AI 분석 결과</h3>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="color: #34495e; margin-bottom: 0.5rem;">📝 전체 이야기 요약</h4>
+        <p style="background: white; padding: 1rem; border-radius: 4px;">{{ session.analysis_summary }}</p>
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="color: #34495e; margin-bottom: 0.5rem;">⚡ 주요 스트레스 요인</h4>
+        <p style="background: white; padding: 1rem; border-radius: 4px; white-space: pre-wrap;">{{ session.analysis_stress }}</p>
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="color: #34495e; margin-bottom: 0.5rem;">💬 상담자 개입 평가</h4>
+        <p style="background: white; padding: 1rem; border-radius: 4px; white-space: pre-wrap;">{{ session.analysis_intervention }}</p>
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="color: #34495e; margin-bottom: 0.5rem;">💡 더 나은 개입 대안</h4>
+        <p style="background: white; padding: 1rem; border-radius: 4px; white-space: pre-wrap;">{{ session.analysis_alternatives }}</p>
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="color: #34495e; margin-bottom: 0.5rem;">📋 이후 상담 계획</h4>
+        <p style="background: white; padding: 1rem; border-radius: 4px; white-space: pre-wrap;">{{ session.analysis_plan }}</p>
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="color: #34495e; margin-bottom: 0.5rem;">❤️ 주요 감정</h4>
+        <p style="background: white; padding: 1rem; border-radius: 4px; white-space: pre-wrap;">{{ session.analysis_emotions }}</p>
+    </div>
+    
+    {% if session.analysis_distortions %}
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="color: #34495e; margin-bottom: 0.5rem;">🔍 인지왜곡 및 당위적 사고</h4>
+        <p style="background: white; padding: 1rem; border-radius: 4px; white-space: pre-wrap;">{{ session.analysis_distortions }}</p>
+    </div>
+    {% endif %}
+    
+    {% if session.analysis_resistance %}
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="color: #34495e; margin-bottom: 0.5rem;">🛡️ 저항 패턴</h4>
+        <p style="background: white; padding: 1rem; border-radius: 4px; white-space: pre-wrap;">{{ session.analysis_resistance }}</p>
+    </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="card" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+    <p style="margin: 0; color: #856404;">
+        ℹ️ 축어록을 업로드하면 AI 분석 결과가 여기에 표시됩니다.
+    </p>
+</div>
+{% endif %}
+
+{% endblock %}
