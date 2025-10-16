@@ -14,6 +14,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 CLIENTS_CSV = 'data/clients.csv'
 SESSIONS_CSV = 'data/sessions.csv'
 UPLOAD_FOLDER = 'data/transcripts'
+AUDIO_FOLDER = 'data/audio'
 
 openai_client = None
 if os.environ.get('OPENAI_API_KEY'):
@@ -22,6 +23,7 @@ if os.environ.get('OPENAI_API_KEY'):
 def init_csv_files():
     os.makedirs('data', exist_ok=True)
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(AUDIO_FOLDER, exist_ok=True)
     
     if not os.path.exists(CLIENTS_CSV):
         clients_df = pd.DataFrame(columns=[
@@ -35,7 +37,7 @@ def init_csv_files():
             'session_id', 'client_id', 'date', 'duration_minutes', 'mode',
             'goals', 'interventions', 'notes', 'next_actions',
             'next_session_date', 'fee', 'paid', 'payment_method', 'rating', 'transcript',
-            'analysis_summary', 'analysis_stress', 'analysis_intervention',
+            'audio_file', 'analysis_summary', 'analysis_stress', 'analysis_intervention',
             'analysis_alternatives', 'analysis_plan', 'analysis_emotions',
             'analysis_distortions', 'analysis_resistance'
         ])
@@ -301,6 +303,7 @@ def session_new():
             'payment_method': request.form.get('payment_method'),
             'rating': request.form.get('rating'),
             'transcript': '',
+            'audio_file': '',
             'analysis_summary': '',
             'analysis_stress': '',
             'analysis_intervention': '',
@@ -406,6 +409,57 @@ def upload_transcript(session_id):
     
     sessions_df.to_csv(SESSIONS_CSV, index=False, encoding='utf-8-sig')
     return redirect(url_for('session_detail', session_id=session_id))
+
+@app.route('/sessions/<session_id>/upload-audio', methods=['POST'])
+@login_required
+def upload_audio(session_id):
+    if 'audio_file' not in request.files:
+        flash('음성 파일이 선택되지 않았습니다.', 'error')
+        return redirect(url_for('session_detail', session_id=session_id))
+    
+    file = request.files['audio_file']
+    
+    if not file or not file.filename:
+        flash('음성 파일이 선택되지 않았습니다.', 'error')
+        return redirect(url_for('session_detail', session_id=session_id))
+    
+    allowed_extensions = {'.mp3', '.wav', '.m4a', '.ogg', '.webm', '.aac', '.flac'}
+    file_ext = os.path.splitext(file.filename)[1].lower()
+    
+    if file_ext not in allowed_extensions:
+        flash(f'지원되지 않는 파일 형식입니다. 허용: {", ".join(allowed_extensions)}', 'error')
+        return redirect(url_for('session_detail', session_id=session_id))
+    
+    filename = f"{session_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}{file_ext}"
+    filepath = os.path.join(AUDIO_FOLDER, filename)
+    
+    try:
+        file.save(filepath)
+        
+        sessions_df = pd.read_csv(SESSIONS_CSV, encoding='utf-8-sig')
+        
+        if 'audio_file' not in sessions_df.columns:
+            sessions_df['audio_file'] = ''
+        
+        idx = sessions_df[sessions_df['session_id'] == session_id].index
+        
+        if len(idx) == 0:
+            flash('회기를 찾을 수 없습니다.', 'error')
+            return redirect(url_for('sessions_list'))
+        
+        sessions_df.at[idx[0], 'audio_file'] = filename
+        sessions_df.to_csv(SESSIONS_CSV, index=False, encoding='utf-8-sig')
+        
+        flash('음성 파일이 업로드되었습니다.', 'success')
+    except Exception as e:
+        flash(f'음성 파일 업로드 오류: {str(e)}', 'error')
+    
+    return redirect(url_for('session_detail', session_id=session_id))
+
+@app.route('/audio/<filename>')
+@login_required
+def serve_audio(filename):
+    return send_file(os.path.join(AUDIO_FOLDER, filename))
 
 @app.route('/export/clients')
 @login_required
