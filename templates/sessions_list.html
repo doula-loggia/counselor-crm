@@ -35,7 +35,7 @@
                 <td>{{ session.duration_minutes }}분</td>
                 <td>{{ session.mode }}</td>
                 <td>{{ session.goals[:50] }}{% if session.goals|length > 50 %}...{% endif %}</td>
-                <td>{{ session.fee }}원</td>
+                <td>{% if session.fee %}{{ (session.fee | float / 10000) | int }}만원{% endif %}</td>
                 <td>
                     {% if session.paid == 'Y' %}
                         <span style="color: #27ae60;">✓</span>
