@@ -561,13 +561,14 @@ def export_sessions():
 @app.route('/monthly-revenue')
 @login_required
 def monthly_revenue():
-    year = request.args.get('year', datetime.now().year, type=int)
+    year = request.args.get('year', type=int)
     
     sessions_df = pd.read_csv(SESSIONS_CSV, encoding='utf-8-sig')
     
     if sessions_df.empty:
+        current_year = datetime.now().year
         return render_template('monthly_revenue.html', 
-                             year=year, 
+                             year=current_year, 
                              years=[], 
                              monthly_stats=[],
                              payment_stats={},
@@ -583,6 +584,9 @@ def monthly_revenue():
     sessions_df['fee'] = pd.to_numeric(sessions_df['fee'], errors='coerce').fillna(0)
     
     available_years = sorted(sessions_df['year'].unique(), reverse=True)
+    
+    if year is None or year not in available_years:
+        year = available_years[0] if available_years else datetime.now().year
     
     year_sessions = sessions_df[sessions_df['year'] == year]
     
