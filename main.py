@@ -558,6 +558,86 @@ def export_sessions():
                     download_name=f'sessions_{datetime.now().strftime("%Y%m%d")}.csv',
                     mimetype='text/csv')
 
+@app.route('/monthly-revenue')
+@login_required
+def monthly_revenue():
+    year = request.args.get('year', datetime.now().year, type=int)
+    
+    sessions_df = pd.read_csv(SESSIONS_CSV, encoding='utf-8-sig')
+    
+    if sessions_df.empty:
+        return render_template('monthly_revenue.html', 
+                             year=year, 
+                             years=[], 
+                             monthly_stats=[],
+                             payment_stats={},
+                             total_revenue=0,
+                             total_paid=0,
+                             total_unpaid=0)
+    
+    sessions_df['date'] = pd.to_datetime(sessions_df['date'], errors='coerce')
+    sessions_df = sessions_df.dropna(subset=['date'])
+    
+    sessions_df['year'] = sessions_df['date'].dt.year
+    sessions_df['month'] = sessions_df['date'].dt.month
+    sessions_df['fee'] = pd.to_numeric(sessions_df['fee'], errors='coerce').fillna(0)
+    
+    available_years = sorted(sessions_df['year'].unique(), reverse=True)
+    
+    year_sessions = sessions_df[sessions_df['year'] == year]
+    
+    monthly_stats = []
+    for month in range(1, 13):
+        month_sessions = year_sessions[year_sessions['month'] == month]
+        
+        if month_sessions.empty:
+            monthly_stats.append({
+                'month': month,
+                'total_sessions': 0,
+                'total_revenue': 0,
+                'paid_revenue': 0,
+                'unpaid_revenue': 0,
+                'cash': 0,
+                'card': 0,
+                'voucher': 0,
+                'free': 0
+            })
+        else:
+            paid_sessions = month_sessions[month_sessions['paid'] == 'Y']
+            unpaid_sessions = month_sessions[month_sessions['paid'] == 'N']
+            
+            monthly_stats.append({
+                'month': month,
+                'total_sessions': len(month_sessions),
+                'total_revenue': int(month_sessions['fee'].sum()),
+                'paid_revenue': int(paid_sessions['fee'].sum()),
+                'unpaid_revenue': int(unpaid_sessions['fee'].sum()),
+                'cash': int(month_sessions[month_sessions['payment_method'] == '현금']['fee'].sum()),
+                'card': int(month_sessions[month_sessions['payment_method'] == '카드']['fee'].sum()),
+                'voucher': int(month_sessions[month_sessions['payment_method'] == '바우처']['fee'].sum()),
+                'free': int(month_sessions[month_sessions['payment_method'] == '무료']['fee'].sum())
+            })
+    
+    payment_stats = {
+        'cash': int(year_sessions[year_sessions['payment_method'] == '현금']['fee'].sum()),
+        'card': int(year_sessions[year_sessions['payment_method'] == '카드']['fee'].sum()),
+        'voucher': int(year_sessions[year_sessions['payment_method'] == '바우처']['fee'].sum()),
+        'free': int(year_sessions[year_sessions['payment_method'] == '무료']['fee'].sum())
+    }
+    
+    total_revenue = int(year_sessions['fee'].sum())
+    total_paid = int(year_sessions[year_sessions['paid'] == 'Y']['fee'].sum())
+    total_unpaid = int(year_sessions[year_sessions['paid'] == 'N']['fee'].sum())
+    
+    return render_template('monthly_revenue.html',
+                         year=year,
+                         years=available_years,
+                         monthly_stats=monthly_stats,
+                         payment_stats=payment_stats,
+                         total_revenue=total_revenue,
+                         total_paid=total_paid,
+                         total_unpaid=total_unpaid)
+
 if __name__ == '__main__':
     init_csv_files()
     app.run(host='0.0.0.0', port=5000, debug=True)
