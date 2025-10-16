@@ -6,7 +6,7 @@
 <h2 style="margin-bottom: 1.5rem;">내담자 정보 수정</h2>
 
 <div class="card">
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
         <div class="form-group">
             <label for="name">이름 *</label>
             <input type="text" id="name" name="name" value="{{ client.name }}" required>
@@ -60,6 +60,28 @@
             <div id="tagSuggestions" style="position: relative; margin-top: 0.3rem;">
                 <div id="suggestionsList" style="display: none; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto; position: absolute; width: 100%; z-index: 1000;"></div>
             </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="medical_history">과거병력</label>
+            <textarea id="medical_history" name="medical_history" placeholder="과거 병력이나 현재 약물 복용 등을 입력하세요" rows="3">{{ client.medical_history }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="counseling_history">상담이력</label>
+            <textarea id="counseling_history" name="counseling_history" placeholder="과거 상담 경험 및 치료 이력을 입력하세요" rows="3">{{ client.counseling_history }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="psychological_test">심리검사 결과 파일</label>
+            {% if client.psychological_test_file %}
+                <p style="margin-bottom: 0.5rem; color: #27ae60;">
+                    <strong>현재 파일:</strong> {{ client.psychological_test_file }}
+                    <a href="/download/psychological_test/{{ client.client_id }}" style="margin-left: 0.5rem; color: #3498db;">다운로드</a>
+                </p>
+            {% endif %}
+            <input type="file" id="psychological_test" name="psychological_test" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png">
+            <small style="color: #7f8c8d; font-size: 0.85rem; margin-top: 0.3rem; display: block;">PDF, DOC, DOCX, TXT, JPG, PNG 파일 업로드 가능 (새 파일 선택 시 기존 파일 대체)</small>
         </div>
         
         <div class="form-group">
