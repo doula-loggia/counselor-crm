@@ -47,6 +47,11 @@
         </div>
         
         <div class="form-group">
+            <label for="tags">태그</label>
+            <input type="text" id="tags" name="tags" value="{{ session_data.tags }}" placeholder="예: 인지행동치료, 노출기법 (쉼표로 구분)">
+        </div>
+        
+        <div class="form-group">
             <label for="notes">회기 노트</label>
             <textarea id="notes" name="notes" placeholder="회기 내용 메모">{{ session_data.notes }}</textarea>
         </div>

@@ -38,7 +38,7 @@ def init_csv_files():
     if not os.path.exists(SESSIONS_CSV):
         sessions_df = pd.DataFrame(columns=[
             'session_id', 'client_id', 'date', 'duration_minutes', 'mode',
-            'goals', 'interventions', 'notes', 'next_actions',
+            'goals', 'interventions', 'tags', 'notes', 'next_actions',
             'next_session_date', 'fee', 'paid', 'payment_method', 'rating', 'transcript',
             'audio_file', 'analysis_summary', 'analysis_stress', 'analysis_intervention',
             'analysis_alternatives', 'analysis_plan', 'analysis_emotions',
@@ -340,6 +340,7 @@ def session_new():
             'mode': request.form.get('mode'),
             'goals': request.form.get('goals'),
             'interventions': request.form.get('interventions'),
+            'tags': request.form.get('tags'),
             'notes': request.form.get('notes'),
             'next_actions': request.form.get('next_actions'),
             'next_session_date': request.form.get('next_session_date'),
@@ -408,6 +409,7 @@ def session_edit(session_id):
         sessions_df.at[idx, 'mode'] = request.form.get('mode')
         sessions_df.at[idx, 'goals'] = request.form.get('goals')
         sessions_df.at[idx, 'interventions'] = request.form.get('interventions')
+        sessions_df.at[idx, 'tags'] = request.form.get('tags')
         sessions_df.at[idx, 'notes'] = request.form.get('notes')
         sessions_df.at[idx, 'next_actions'] = request.form.get('next_actions')
         sessions_df.at[idx, 'next_session_date'] = request.form.get('next_session_date')

@@ -38,6 +38,12 @@
             <th>중재/개입</th>
             <td>{{ session_data.interventions }}</td>
         </tr>
+        {% if session_data.tags %}
+        <tr>
+            <th>태그</th>
+            <td>{{ session_data.tags }}</td>
+        </tr>
+        {% endif %}
         <tr>
             <th>회기 노트</th>
             <td>{{ session_data.notes }}</td>
