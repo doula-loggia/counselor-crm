@@ -51,8 +51,14 @@
         </div>
         
         <div class="form-group">
-            <label for="tags">태그 (쉼표로 구분)</label>
-            <input type="text" id="tags" name="tags" value="{{ client.tags }}" placeholder="예: 불안, 우울, 대인관계">
+            <label for="tagInput">태그 (쉼표로 구분)</label>
+            <div id="tagsContainer" style="border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; min-height: 50px; display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; background: white;">
+                <input type="text" id="tagInput" style="border: none; outline: none; flex: 1; min-width: 150px; padding: 0.3rem;" placeholder="태그 입력 후 쉼표 또는 엔터">
+            </div>
+            <input type="hidden" id="tags" name="tags" value="{{ client.tags }}">
+            <div id="tagSuggestions" style="position: relative; margin-top: 0.3rem;">
+                <div id="suggestionsList" style="display: none; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto; position: absolute; width: 100%; z-index: 1000;"></div>
+            </div>
         </div>
         
         <div class="form-group">
@@ -66,4 +72,102 @@
         </div>
     </form>
 </div>
+
+<script>
+const existingTags = {{ existing_tags|tojson }};
+const initialTags = "{{ client.tags }}";
+let selectedTags = [];
+
+const tagInput = document.getElementById('tagInput');
+const tagsContainer = document.getElementById('tagsContainer');
+const tagsHiddenInput = document.getElementById('tags');
+const suggestionsList = document.getElementById('suggestionsList');
+
+if (initialTags) {
+    selectedTags = initialTags.split(',').map(t => t.trim()).filter(t => t);
+    renderTags();
+}
+
+function addTag(tagText) {
+    const trimmedTag = tagText.trim();
+    if (!trimmedTag || selectedTags.includes(trimmedTag)) return;
+    
+    selectedTags.push(trimmedTag);
+    renderTags();
+    updateHiddenInput();
+    tagInput.value = '';
+    suggestionsList.style.display = 'none';
+}
+
+function removeTag(tagText) {
+    selectedTags = selectedTags.filter(t => t !== tagText);
+    renderTags();
+    updateHiddenInput();
+}
+
+function renderTags() {
+    const existingTagElements = tagsContainer.querySelectorAll('.tag-item');
+    existingTagElements.forEach(el => el.remove());
+    
+    selectedTags.forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tag-item';
+        tagEl.style.cssText = 'background: #3498db; color: white; padding: 0.3rem 0.6rem; border-radius: 3px; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.3rem;';
+        tagEl.innerHTML = `${tag} <span style="cursor: pointer; font-weight: bold;" onclick="removeTag('${tag}')">&times;</span>`;
+        tagsContainer.insertBefore(tagEl, tagInput);
+    });
+}
+
+function updateHiddenInput() {
+    tagsHiddenInput.value = selectedTags.join(', ');
+}
+
+function showSuggestions(inputValue) {
+    const filtered = existingTags.filter(tag => 
+        tag.toLowerCase().includes(inputValue.toLowerCase()) && 
+        !selectedTags.includes(tag)
+    );
+    
+    if (filtered.length === 0 || !inputValue) {
+        suggestionsList.style.display = 'none';
+        return;
+    }
+    
+    suggestionsList.innerHTML = filtered.map(tag => 
+        `<div style="padding: 0.5rem; cursor: pointer; border-bottom: 1px solid #eee;" 
+              onmouseover="this.style.background='#ecf0f1'" 
+              onmouseout="this.style.background='white'"
+              onclick="addTag('${tag}')">${tag}</div>`
+    ).join('');
+    suggestionsList.style.display = 'block';
+}
+
+tagInput.addEventListener('input', (e) => {
+    showSuggestions(e.target.value);
+});
+
+tagInput.addEventListener('keydown', (e) => {
+    if (e.key === ',' || e.key === 'Enter') {
+        e.preventDefault();
+        const value = tagInput.value.replace(',', '').trim();
+        if (value) {
+            addTag(value);
+        }
+    }
+});
+
+tagInput.addEventListener('blur', () => {
+    setTimeout(() => {
+        suggestionsList.style.display = 'none';
+    }, 200);
+});
+
+document.querySelector('form').addEventListener('submit', (e) => {
+    const currentInput = tagInput.value.trim();
+    if (currentInput) {
+        addTag(currentInput);
+    }
+});
+</script>
+
 {% endblock %}

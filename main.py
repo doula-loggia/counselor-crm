@@ -166,9 +166,9 @@ def clients_list():
 @app.route('/clients/new', methods=['GET', 'POST'])
 @login_required
 def client_new():
+    clients_df = pd.read_csv(CLIENTS_CSV, encoding='utf-8-sig')
+    
     if request.method == 'POST':
-        clients_df = pd.read_csv(CLIENTS_CSV, encoding='utf-8-sig')
-        
         new_client = {
             'client_id': generate_client_id(),
             'name': request.form.get('name'),
@@ -188,7 +188,14 @@ def client_new():
         flash('새 내담자가 추가되었습니다.', 'success')
         return redirect(url_for('clients_list'))
     
-    return render_template('client_form.html')
+    all_tags = set()
+    for tags_str in clients_df['tags'].dropna():
+        if tags_str:
+            tags = [tag.strip() for tag in str(tags_str).split(',')]
+            all_tags.update(tags)
+    
+    existing_tags = sorted(list(all_tags))
+    return render_template('client_form.html', existing_tags=existing_tags)
 
 @app.route('/clients/<client_id>')
 @login_required
@@ -241,7 +248,15 @@ def client_edit(client_id):
         return redirect(url_for('clients_list'))
     
     client = client_data.fillna('').to_dict('records')[0]
-    return render_template('client_edit.html', client=client)
+    
+    all_tags = set()
+    for tags_str in clients_df['tags'].dropna():
+        if tags_str:
+            tags = [tag.strip() for tag in str(tags_str).split(',')]
+            all_tags.update(tags)
+    
+    existing_tags = sorted(list(all_tags))
+    return render_template('client_edit.html', client=client, existing_tags=existing_tags)
 
 @app.route('/sessions')
 @login_required
