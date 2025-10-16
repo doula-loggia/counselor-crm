@@ -296,7 +296,7 @@ def session_detail(session_id):
     )
     
     session_info = session_data.fillna('').to_dict('records')[0]
-    return render_template('session_detail.html', session=session_info)
+    return render_template('session_detail.html', session_data=session_info)
 
 @app.route('/sessions/<session_id>/upload-transcript', methods=['POST'])
 @login_required
