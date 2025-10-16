@@ -305,21 +305,26 @@ def upload_transcript(session_id):
         flash('회기를 찾을 수 없습니다.', 'error')
         return redirect(url_for('sessions_list'))
     
-    sessions_df.loc[idx, 'transcript'] = transcript_text
+    sessions_df.at[idx[0], 'transcript'] = transcript_text
     
     if openai_client:
         flash('축어록을 업로드하고 AI 분석을 시작합니다...', 'success')
         analysis = analyze_transcript(transcript_text)
         
         if analysis:
-            sessions_df.loc[idx, 'analysis_summary'] = analysis.get('summary', '')
-            sessions_df.loc[idx, 'analysis_stress'] = analysis.get('stress_factors', '')
-            sessions_df.loc[idx, 'analysis_intervention'] = analysis.get('intervention_eval', '')
-            sessions_df.loc[idx, 'analysis_alternatives'] = analysis.get('alternatives', '')
-            sessions_df.loc[idx, 'analysis_plan'] = analysis.get('future_plan', '')
-            sessions_df.loc[idx, 'analysis_emotions'] = analysis.get('emotions', '')
-            sessions_df.loc[idx, 'analysis_distortions'] = analysis.get('cognitive_distortions', '')
-            sessions_df.loc[idx, 'analysis_resistance'] = analysis.get('resistance', '')
+            def to_string(value):
+                if isinstance(value, (list, dict)):
+                    return json.dumps(value, ensure_ascii=False)
+                return str(value) if value else ''
+            
+            sessions_df.at[idx[0], 'analysis_summary'] = to_string(analysis.get('summary', ''))
+            sessions_df.at[idx[0], 'analysis_stress'] = to_string(analysis.get('stress_factors', ''))
+            sessions_df.at[idx[0], 'analysis_intervention'] = to_string(analysis.get('intervention_eval', ''))
+            sessions_df.at[idx[0], 'analysis_alternatives'] = to_string(analysis.get('alternatives', ''))
+            sessions_df.at[idx[0], 'analysis_plan'] = to_string(analysis.get('future_plan', ''))
+            sessions_df.at[idx[0], 'analysis_emotions'] = to_string(analysis.get('emotions', ''))
+            sessions_df.at[idx[0], 'analysis_distortions'] = to_string(analysis.get('cognitive_distortions', ''))
+            sessions_df.at[idx[0], 'analysis_resistance'] = to_string(analysis.get('resistance', ''))
             flash('AI 분석이 완료되었습니다!', 'success')
         else:
             flash('축어록이 저장되었지만 AI 분석에 실패했습니다.', 'error')
