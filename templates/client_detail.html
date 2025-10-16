@@ -85,7 +85,7 @@
         <tbody>
             {% for session in sessions %}
             <tr>
-                <td>{{ session.date }}</td>
+                <td><a href="/sessions/{{ session.session_id }}" style="color: #2c3e50; text-decoration: none;"><strong>{{ session.date }}</strong></a></td>
                 <td>{{ session.duration_minutes }}분</td>
                 <td>{{ session.mode }}</td>
                 <td>{{ session.goals[:50] }}{% if session.goals|length > 50 %}...{% endif %}</td>
@@ -106,7 +106,6 @@
                     {% endif %}
                 </td>
                 <td>
-                    <a href="/sessions/{{ session.session_id }}" style="color: #3498db; text-decoration: none; margin-right: 0.5rem;">보기</a>
                     <a href="/sessions/{{ session.session_id }}/edit" style="color: #27ae60; text-decoration: none;">수정</a>
                 </td>
             </tr>
