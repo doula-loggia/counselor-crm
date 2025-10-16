@@ -28,7 +28,7 @@
         </tr>
         <tr>
             <th>출생연도</th>
-            <td>{{ client.birth_year }}</td>
+            <td>{% if client.birth_year %}{{ client.birth_year | int }}{% endif %}</td>
         </tr>
         <tr>
             <th>성별</th>
