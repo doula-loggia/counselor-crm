@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}월별 수익 통계 - 치료사 클라이언트 관리 시스템{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2>월별 수익 통계</h2>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <label for="year_select" style="margin: 0; font-weight: normal;">연도:</label>
+        <select id="year_select" onchange="location.href='/monthly-revenue?year=' + this.value" style="width: auto; padding: 0.5rem;">
+            {% for y in years %}
+                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}년</option>
+            {% endfor %}
+            {% if not years %}
+                <option value="{{ year }}">{{ year }}년</option>
+            {% endif %}
+        </select>
+    </div>
+</div>
+
+<!-- 연간 요약 -->
+<div class="stats">
+    <div class="stat-card">
+        <h3>총 수익</h3>
+        <div class="number">{{ (total_revenue / 10000) | int }}만</div>
+        <p style="color: #7f8c8d; font-size: 0.9rem; margin-top: 0.5rem;">{{ total_revenue | int }}원</p>
+    </div>
+    <div class="stat-card">
+        <h3>납부 완료</h3>
+        <div class="number" style="color: #27ae60;">{{ (total_paid / 10000) | int }}만</div>
+        <p style="color: #7f8c8d; font-size: 0.9rem; margin-top: 0.5rem;">{{ total_paid | int }}원</p>
+    </div>
+    <div class="stat-card">
+        <h3>미납</h3>
+        <div class="number" style="color: #e74c3c;">{{ (total_unpaid / 10000) | int }}만</div>
+        <p style="color: #7f8c8d; font-size: 0.9rem; margin-top: 0.5rem;">{{ total_unpaid | int }}원</p>
+    </div>
+</div>
+
+<!-- 결제수단별 통계 -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h3 style="margin-bottom: 1rem;">{{ year }}년 결제수단별 통계</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+        <div style="text-align: center; padding: 1rem; background: #ecf0f1; border-radius: 4px;">
+            <div style="color: #7f8c8d; font-size: 0.9rem; margin-bottom: 0.5rem;">현금</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: #2c3e50;">{{ (payment_stats.cash / 10000) | int }}만</div>
+        </div>
+        <div style="text-align: center; padding: 1rem; background: #ecf0f1; border-radius: 4px;">
+            <div style="color: #7f8c8d; font-size: 0.9rem; margin-bottom: 0.5rem;">카드</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: #2c3e50;">{{ (payment_stats.card / 10000) | int }}만</div>
+        </div>
+        <div style="text-align: center; padding: 1rem; background: #ecf0f1; border-radius: 4px;">
+            <div style="color: #7f8c8d; font-size: 0.9rem; margin-bottom: 0.5rem;">바우처</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: #2c3e50;">{{ (payment_stats.voucher / 10000) | int }}만</div>
+        </div>
+        <div style="text-align: center; padding: 1rem; background: #ecf0f1; border-radius: 4px;">
+            <div style="color: #7f8c8d; font-size: 0.9rem; margin-bottom: 0.5rem;">무료</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: #2c3e50;">{{ (payment_stats.free / 10000) | int }}만</div>
+        </div>
+    </div>
+</div>
+
+<!-- 월별 상세 통계 -->
+<div class="card">
+    <h3 style="margin-bottom: 1rem;">{{ year }}년 월별 상세</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>월</th>
+                <th>회기 수</th>
+                <th>총 수익</th>
+                <th>납부 완료</th>
+                <th>미납</th>
+                <th>현금</th>
+                <th>카드</th>
+                <th>바우처</th>
+                <th>무료</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in monthly_stats %}
+            <tr {% if stat.total_sessions == 0 %}style="opacity: 0.5;"{% endif %}>
+                <td><strong>{{ stat.month }}월</strong></td>
+                <td>{{ stat.total_sessions }}</td>
+                <td>
+                    {% if stat.total_revenue > 0 %}
+                        {{ (stat.total_revenue / 10000) | int }}만원
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td style="color: #27ae60;">
+                    {% if stat.paid_revenue > 0 %}
+                        {{ (stat.paid_revenue / 10000) | int }}만원
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td style="color: #e74c3c;">
+                    {% if stat.unpaid_revenue > 0 %}
+                        {{ (stat.unpaid_revenue / 10000) | int }}만원
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if stat.cash > 0 %}
+                        {{ (stat.cash / 10000) | int }}만원
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if stat.card > 0 %}
+                        {{ (stat.card / 10000) | int }}만원
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if stat.voucher > 0 %}
+                        {{ (stat.voucher / 10000) | int }}만원
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if stat.free > 0 %}
+                        {{ (stat.free / 10000) | int }}만원
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
