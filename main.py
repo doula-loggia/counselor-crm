@@ -91,14 +91,15 @@ def analyze_transcript(transcript_text):
 }}"""
                 }
             ],
-            response_format={"type": "json_object"},
-            max_completion_tokens=4096
+            response_format={"type": "json_object"}
         )
         
         result = json.loads(response.choices[0].message.content)
         return result
     except Exception as e:
         print(f"AI 분석 오류: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 @app.route('/')
@@ -269,18 +270,22 @@ def session_detail(session_id):
 @app.route('/sessions/<session_id>/upload-transcript', methods=['POST'])
 @login_required
 def upload_transcript(session_id):
+    transcript_text = ''
+    
     if 'transcript_file' in request.files:
         file = request.files['transcript_file']
         if file and file.filename:
-            transcript_text = file.read().decode('utf-8')
-        else:
-            flash('파일을 선택해주세요.', 'error')
-            return redirect(url_for('session_detail', session_id=session_id))
-    else:
+            try:
+                transcript_text = file.read().decode('utf-8')
+            except Exception as e:
+                flash(f'파일 읽기 오류: {str(e)}', 'error')
+                return redirect(url_for('session_detail', session_id=session_id))
+    
+    if not transcript_text:
         transcript_text = request.form.get('transcript_text', '').strip()
     
     if not transcript_text:
-        flash('축어록 내용이 비어있습니다.', 'error')
+        flash('축어록 내용이 비어있습니다. 파일을 업로드하거나 텍스트를 직접 입력해주세요.', 'error')
         return redirect(url_for('session_detail', session_id=session_id))
     
     sessions_df = pd.read_csv(SESSIONS_CSV, encoding='utf-8-sig')
