@@ -28,10 +28,11 @@
         </div>
         
         <div class="form-group">
-            <label for="mode">모드</label>
+            <label for="mode">상담방법</label>
             <select id="mode" name="mode">
                 <option value="대면" {% if session_data.mode == '대면' %}selected{% endif %}>대면</option>
-                <option value="온라인" {% if session_data.mode == '온라인' %}selected{% endif %}>온라인</option>
+                <option value="줌" {% if session_data.mode == '줌' %}selected{% endif %}>줌</option>
+                <option value="전화" {% if session_data.mode == '전화' %}selected{% endif %}>전화</option>
             </select>
         </div>
         
