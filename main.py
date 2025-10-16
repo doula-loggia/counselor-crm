@@ -186,6 +186,37 @@ def client_new():
     
     return render_template('client_form.html')
 
+@app.route('/clients/<client_id>/edit', methods=['GET', 'POST'])
+@login_required
+def client_edit(client_id):
+    clients_df = pd.read_csv(CLIENTS_CSV, encoding='utf-8-sig')
+    
+    client_data = clients_df[clients_df['client_id'] == client_id]
+    if client_data.empty:
+        flash('내담자를 찾을 수 없습니다.', 'error')
+        return redirect(url_for('clients_list'))
+    
+    if request.method == 'POST':
+        idx = clients_df[clients_df['client_id'] == client_id].index[0]
+        
+        clients_df.at[idx, 'name'] = request.form.get('name')
+        clients_df.at[idx, 'phone'] = request.form.get('phone')
+        clients_df.at[idx, 'email'] = request.form.get('email')
+        clients_df.at[idx, 'birth_year'] = request.form.get('birth_year')
+        clients_df.at[idx, 'gender'] = request.form.get('gender')
+        clients_df.at[idx, 'first_session_date'] = request.form.get('first_session_date')
+        clients_df.at[idx, 'status'] = request.form.get('status')
+        clients_df.at[idx, 'tags'] = request.form.get('tags')
+        clients_df.at[idx, 'notes'] = request.form.get('notes')
+        
+        clients_df.to_csv(CLIENTS_CSV, index=False, encoding='utf-8-sig')
+        
+        flash('내담자 정보가 수정되었습니다.', 'success')
+        return redirect(url_for('clients_list'))
+    
+    client = client_data.fillna('').to_dict('records')[0]
+    return render_template('client_edit.html', client=client)
+
 @app.route('/sessions')
 @login_required
 def sessions_list():
