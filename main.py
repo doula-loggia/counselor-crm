@@ -289,6 +289,16 @@ def upload_transcript(session_id):
         return redirect(url_for('session_detail', session_id=session_id))
     
     sessions_df = pd.read_csv(SESSIONS_CSV, encoding='utf-8-sig')
+    
+    required_columns = [
+        'transcript', 'analysis_summary', 'analysis_stress', 'analysis_intervention',
+        'analysis_alternatives', 'analysis_plan', 'analysis_emotions',
+        'analysis_distortions', 'analysis_resistance'
+    ]
+    for col in required_columns:
+        if col not in sessions_df.columns:
+            sessions_df[col] = ''
+    
     idx = sessions_df[sessions_df['session_id'] == session_id].index
     
     if len(idx) == 0:
