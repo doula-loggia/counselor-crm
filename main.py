@@ -183,14 +183,19 @@ def login():
         password = request.form.get('password')
         secret_password = os.environ.get('SECRET_PASSWORD')
         
+        print(f"DEBUG - Login attempt: password='{password}', secret='{secret_password}'")
+        
         if not secret_password:
+            print("DEBUG - No SECRET_PASSWORD found!")
             flash('SECRET_PASSWORD 환경변수가 설정되지 않았습니다. Replit Secrets에 SECRET_PASSWORD를 추가해주세요.', 'error')
             return render_template('login.html')
         
         if password == secret_password:
+            print("DEBUG - Login successful!")
             session['logged_in'] = True
             return redirect(url_for('home'))
         else:
+            print(f"DEBUG - Login failed! password != secret_password")
             flash('비밀번호가 올바르지 않습니다.', 'error')
     
     return render_template('login.html')
