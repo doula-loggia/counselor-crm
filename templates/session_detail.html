@@ -108,7 +108,12 @@
 
 {% if session_data.analysis_summary %}
 <div class="card" style="background: #f8f9fa; border-left: 4px solid #3498db;">
-    <h3 style="margin-bottom: 1.5rem; color: #2c3e50;">🤖 AI 분석 결과</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="margin: 0; color: #2c3e50;">🤖 AI 분석 결과</h3>
+        <form method="POST" action="/sessions/{{ session_data.session_id }}/reanalyze" style="margin: 0;">
+            <button type="submit" class="btn" style="background: #e67e22; font-size: 0.9rem; padding: 0.6rem 1rem;">🔄 재분석</button>
+        </form>
+    </div>
     
     <div style="margin-bottom: 1.5rem;">
         <h4 style="color: #34495e; margin-bottom: 0.5rem;">📝 전체 이야기 요약</h4>

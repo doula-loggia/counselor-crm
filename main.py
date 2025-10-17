@@ -595,6 +595,50 @@ def upload_audio(session_id):
 def serve_audio(filename):
     return send_file(os.path.join(AUDIO_FOLDER, filename))
 
+@app.route('/sessions/<session_id>/reanalyze', methods=['POST'])
+@login_required
+def reanalyze_session(session_id):
+    sessions_df = pd.read_csv(SESSIONS_CSV, encoding='utf-8-sig')
+    idx = sessions_df[sessions_df['session_id'] == session_id].index
+    
+    if len(idx) == 0:
+        flash('회기를 찾을 수 없습니다.', 'error')
+        return redirect(url_for('sessions_list'))
+    
+    transcript = sessions_df.at[idx[0], 'transcript']
+    
+    if not transcript or pd.isna(transcript) or transcript.strip() == '':
+        flash('축어록이 없어서 재분석할 수 없습니다.', 'error')
+        return redirect(url_for('session_detail', session_id=session_id))
+    
+    if not openai_client:
+        flash('OpenAI API 키가 설정되지 않아 재분석할 수 없습니다.', 'error')
+        return redirect(url_for('session_detail', session_id=session_id))
+    
+    analysis = analyze_transcript(transcript)
+    
+    if analysis:
+        def to_string(value):
+            if isinstance(value, (list, dict)):
+                return json.dumps(value, ensure_ascii=False)
+            return str(value) if value else ''
+        
+        sessions_df.at[idx[0], 'analysis_summary'] = to_string(analysis.get('summary', ''))
+        sessions_df.at[idx[0], 'analysis_stress'] = to_string(analysis.get('stress_factors', ''))
+        sessions_df.at[idx[0], 'analysis_intervention'] = to_string(analysis.get('intervention_eval', ''))
+        sessions_df.at[idx[0], 'analysis_alternatives'] = to_string(analysis.get('alternatives', ''))
+        sessions_df.at[idx[0], 'analysis_plan'] = to_string(analysis.get('future_plan', ''))
+        sessions_df.at[idx[0], 'analysis_emotions'] = to_string(analysis.get('emotions', ''))
+        sessions_df.at[idx[0], 'analysis_distortions'] = to_string(analysis.get('cognitive_distortions', ''))
+        sessions_df.at[idx[0], 'analysis_resistance'] = to_string(analysis.get('resistance', ''))
+        
+        sessions_df.to_csv(SESSIONS_CSV, index=False, encoding='utf-8-sig')
+        flash('AI 재분석이 완료되었습니다!', 'success')
+    else:
+        flash('AI 재분석에 실패했습니다.', 'error')
+    
+    return redirect(url_for('session_detail', session_id=session_id))
+
 @app.route('/export/clients')
 @login_required
 def export_clients():
