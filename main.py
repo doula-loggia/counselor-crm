@@ -10,6 +10,9 @@ import PyPDF2
 from docx import Document
 import olefile
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SESSION_SECRET', secrets.token_hex(32))
@@ -789,4 +792,5 @@ def download_psychological_test(client_id):
 
 if __name__ == '__main__':
     init_csv_files()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
