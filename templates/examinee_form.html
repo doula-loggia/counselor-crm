@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}수검자 정보 수정{% else %}새 수검자 등록{% endif %} - 심리상담사 내담자 관리 시스템{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 1.5rem;">{% if is_edit %}수검자 정보 수정{% else %}새 수검자 등록{% endif %}</h2>
+
+<div class="card">
+    <form method="POST" action="{{ form_action }}" enctype="multipart/form-data" id="examineeForm">
+        <div class="form-group">
+            <label for="source">수검자 출처</label>
+            <select id="source" name="source">
+                {% for value, label in source_choices %}
+                    <option value="{{ value }}" {% if examinee.source == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group" id="linkedClientContainer" style="display: none;">
+            <label for="linked_client_id">연결할 내담자</label>
+            <select id="linked_client_id" name="linked_client_id">
+                <option value="">내담자를 선택하세요</option>
+                {% for client in clients %}
+                    <option value="{{ client.client_id }}" {% if examinee.linked_client_id == client.client_id or preselected_client_id == client.client_id %}selected{% endif %}>
+                        {{ client.name }} ({{ client.client_id }})
+                    </option>
+                {% endfor %}
+            </select>
+            <small style="color: #7f8c8d; font-size: 0.85rem; margin-top: 0.3rem; display: block;">
+                기존 내담자를 선택하면 인적 정보를 별도로 입력할 필요가 없습니다.
+            </small>
+        </div>
+        
+        <div id="personalInfoSection">
+            <div class="form-group">
+                <label for="name">이름 *</label>
+                <input type="text" id="name" name="name" value="{{ examinee.name }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="birth_year">출생연도</label>
+                <input type="number" id="birth_year" name="birth_year" value="{{ examinee.birth_year }}" placeholder="1990" step="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="gender">성별</label>
+                <select id="gender" name="gender">
+                    <option value="" {% if not examinee.gender %}selected{% endif %}>선택안함</option>
+                    <option value="남성" {% if examinee.gender == '남성' %}selected{% endif %}>남성</option>
+                    <option value="여성" {% if examinee.gender == '여성' %}selected{% endif %}>여성</option>
+                    <option value="기타" {% if examinee.gender == '기타' %}selected{% endif %}>기타</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">전화번호</label>
+                <input type="tel" id="phone" name="phone" value="{{ examinee.phone }}" placeholder="010-1234-5678">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">이메일</label>
+                <input type="email" id="email" name="email" value="{{ examinee.email }}">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="assessment_date">검사 날짜</label>
+            <input type="date" id="assessment_date" name="assessment_date" value="{{ examinee.assessment_date }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="assessment_type">검사 종류</label>
+            <input type="text" id="assessment_type" name="assessment_type" value="{{ examinee.assessment_type }}" placeholder="예: 정서검사, 성격검사">
+        </div>
+        
+        <div class="form-group">
+            <label for="assessment_tool">사용 검사 도구</label>
+            <input type="text" id="assessment_tool" name="assessment_tool" value="{{ examinee.assessment_tool }}" placeholder="예: MMPI-2, BDI-II">
+        </div>
+        
+        <div class="form-group">
+            <label for="assessment_description">검사 요약 또는 비고</label>
+            <textarea id="assessment_description" name="assessment_description" rows="4" placeholder="검사 목적, 주요 결과 등을 입력하세요">{{ examinee.assessment_description }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="status">현재 상태</label>
+            <select id="status" name="status">
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if examinee.status == value or (not examinee.status and value == 'evaluating') %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">상담자 메모</label>
+            <textarea id="notes" name="notes" rows="4" placeholder="검사 관련 메모나 후속 계획을 입력하세요">{{ examinee.notes }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="report_file">검사 보고서 파일</label>
+            {% if examinee.report_file %}
+                <p style="margin-bottom: 0.5rem; color: #3b5998;">
+                    <a href="/download/examinee_report/{{ examinee.examinee_id }}" style="text-decoration: none;">
+                        📄 {{ examinee.report_file }} (다운로드)
+                    </a>
+                </p>
+            {% endif %}
+            <input type="file" id="report_file" name="report_file" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png">
+            <small style="color: #7f8c8d; font-size: 0.85rem; margin-top: 0.3rem; display: block;">PDF, DOC, DOCX, TXT, JPG, JPEG, PNG 파일 업로드 가능</small>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit">{{ submit_label }}</button>
+            {% if is_edit %}
+                <a href="/examinees/{{ examinee.examinee_id }}" class="btn btn-secondary">취소</a>
+            {% else %}
+                <a href="/examinees" class="btn btn-secondary">취소</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<script>
+const clientsData = {{ clients_json | tojson }};
+const clientSelect = document.getElementById('linked_client_id');
+const fields = {
+    name: document.getElementById('name'),
+    birth_year: document.getElementById('birth_year'),
+    gender: document.getElementById('gender'),
+    phone: document.getElementById('phone'),
+    email: document.getElementById('email')
+};
+const isEditForm = {{ 'true' if is_edit else 'false' }};
+const sourceSelect = document.getElementById('source');
+const personalInfoSection = document.getElementById('personalInfoSection');
+const linkedClientContainer = document.getElementById('linkedClientContainer');
+
+function normalizeValue(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    const text = String(value);
+    if (text.toLowerCase() === 'nan') {
+        return '';
+    }
+    return text.endsWith('.0') ? text.slice(0, -2) : text;
+}
+
+function autoFillFromClient(force = false) {
+    const selectedId = clientSelect.value;
+    if (!selectedId) {
+        return;
+    }
+    
+    const client = clientsData.find(item => item.client_id === selectedId);
+    if (!client) {
+        return;
+    }
+    
+    if (force || !fields.name.value) {
+        fields.name.value = normalizeValue(client.name);
+    }
+    if (force || !fields.birth_year.value) {
+        fields.birth_year.value = normalizeValue(client.birth_year);
+    }
+    if (force || !fields.gender.value) {
+        fields.gender.value = normalizeValue(client.gender);
+    }
+    if (force || !fields.phone.value) {
+        fields.phone.value = normalizeValue(client.phone);
+    }
+    if (force || !fields.email.value) {
+        fields.email.value = normalizeValue(client.email);
+    }
+}
+
+function updateVisibility() {
+    const source = sourceSelect.value;
+    const isExistingClient = source === 'existing_client';
+    personalInfoSection.style.display = isExistingClient ? 'none' : 'block';
+    linkedClientContainer.style.display = isExistingClient ? 'block' : 'none';
+    Object.values(fields).forEach(field => {
+        field.required = !isExistingClient && field.id === 'name';
+    });
+    if (!isExistingClient) {
+        clientSelect.value = '';
+    }
+}
+
+sourceSelect.addEventListener('change', () => {
+    updateVisibility();
+    if (sourceSelect.value !== 'existing_client') {
+        Object.values(fields).forEach(field => {
+            field.removeAttribute('readonly');
+        });
+    } else {
+        autoFillFromClient(true);
+    }
+});
+
+clientSelect.addEventListener('change', () => {
+    autoFillFromClient(false);
+});
+
+const preselectedClientId = "{{ preselected_client_id }}";
+const defaultSource = "{{ default_source }}";
+if (defaultSource) {
+    sourceSelect.value = defaultSource;
+}
+updateVisibility();
+
+if (preselectedClientId) {
+    clientSelect.value = preselectedClientId;
+}
+
+if ((preselectedClientId || sourceSelect.value === 'existing_client') && !isEditForm) {
+    autoFillFromClient(true);
+}
+</script>
+{% endblock %}

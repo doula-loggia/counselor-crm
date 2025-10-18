@@ -6,18 +6,45 @@
 <h2 style="margin-bottom: 2rem;">대시보드</h2>
 
 <div class="stats">
-    <div class="stat-card">
-        <h3>전체 내담자</h3>
-        <div class="number">{{ total_clients }}</div>
-    </div>
-    <div class="stat-card">
-        <h3>활성 내담자</h3>
-        <div class="number">{{ active_clients }}</div>
-    </div>
-    <div class="stat-card">
+    <a href="/clients?status=counseling" class="stat-card" style="text-decoration: none; color: inherit;">
+        <h3>상담중 내담자</h3>
+        <div class="number">{{ counseling_clients }}</div>
+        <div class="subtext">재상담 {{ reengaged_clients }}</div>
+    </a>
+    <a href="/examinees?source=existing_client" class="stat-card" style="text-decoration: none; color: inherit;">
+        <h3>연계된 수검자</h3>
+        <div class="number">{{ linked_examinees }}</div>
+    </a>
+    <a href="/sessions" class="stat-card" style="text-decoration: none; color: inherit;">
         <h3>전체 회기</h3>
         <div class="number">{{ total_sessions }}</div>
-    </div>
+    </a>
+    <a href="/clients" class="stat-card" style="text-decoration: none; color: inherit;">
+        <h3>전체 내담자</h3>
+        <div class="number">{{ total_clients }}</div>
+    </a>
+    <a href="/examinees" class="stat-card" style="text-decoration: none; color: inherit;">
+        <h3>전체 수검자</h3>
+        <div class="number">{{ total_examinees }}</div>
+    </a>
+    <a href="/calendar" class="stat-card" style="text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 0.6rem; align-items: center;">
+        <h3 style="margin-bottom: 0;">일정 캘린더</h3>
+        <div style="display: flex; align-items: center; gap: 0.6rem; color: #2563eb; font-weight: 700;">
+            <span style="font-size: 2.2rem;">📅</span>
+            <div style="text-align: left;">
+                <div style="font-size: 1.1rem; color: #1f2937;">{{ today_label }}</div>
+                <div style="font-size: 0.9rem; color: #6b7280;">{{ weekday_labels[today_weekday_idx] }}요일</div>
+            </div>
+        </div>
+        <div style="width: 100%; background: #eff6ff; border-radius: 8px; padding: 0.7rem;">
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.3rem; font-size: 0.75rem; text-align: center;">
+                {% for label in weekday_labels %}
+                    <span style="padding: 0.35rem 0; border-radius: 999px; font-weight: 600; background: {% if loop.index0 == today_weekday_idx %}#3b82f6{% else %}transparent{% endif %}; color: {% if loop.index0 == today_weekday_idx %}#ffffff{% else %}#1f2937{% endif %};">{{ label }}</span>
+                {% endfor %}
+            </div>
+            <div style="margin-top: 0.6rem; font-size: 0.78rem; color: #2563eb; text-align: center;">캘린더에서 모든 일정 확인하기 →</div>
+        </div>
+    </a>
 </div>
 
 <div class="card">
@@ -25,8 +52,50 @@
     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
         <a href="/clients/new" class="btn">새 내담자 추가</a>
         <a href="/sessions/new" class="btn">새 회기 추가</a>
+        <a href="/examinees/new" class="btn">새 수검자 등록</a>
         <a href="/clients" class="btn btn-secondary">내담자 목록</a>
         <a href="/sessions" class="btn btn-secondary">회기 목록</a>
+        <a href="/examinees" class="btn btn-secondary">수검자 목록</a>
     </div>
+    {% if upcoming_sessions %}
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0;">
+    <div>
+        <h4 style="margin-bottom: 0.6rem; color: #1f2937; font-size: 1.05rem;">다가오는 회기</h4>
+        <ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem;">
+            {% for session in upcoming_sessions %}
+            <li style="display: flex; justify-content: space-between; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem 1rem;">
+                <div>
+                    <div style="font-weight: 600; color: #1f2937;">{{ session.date_label }} · {{ session.participants }}</div>
+                    {% if session.mode %}
+                    <div style="color: #6b7280; font-size: 0.85rem; margin-top: 0.2rem;">방식: {{ session.mode }}</div>
+                    {% endif %}
+                </div>
+                <a href="{{ session.url }}" class="btn btn-secondary" style="white-space: nowrap;">상세 보기</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
 </div>
+
+{% if missing_consents %}
+<div class="card" style="border-left: 4px solid #e74c3c; background: #fef2f2; margin-top: 1.5rem;">
+    <h3 style="color: #c0392b; margin-bottom: 0.8rem;">필수 동의서 미완료 내담자 ({{ missing_consents_count }}명)</h3>
+    <p style="color: #7f1d1d; font-size: 0.95rem; margin-bottom: 1rem;">아래 내담자는 상담 동의서·비밀보장 안내서·개인정보 동의서 중 하나 이상이 누락되어 있습니다.</p>
+    <ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem;">
+        {% for consent in missing_consents[:5] %}
+        <li style="background: white; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid #fee2e2; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong>{{ consent.client_name }}</strong>
+                <span style="color: #b91c1c; font-size: 0.9rem; margin-left: 0.6rem;">{{ consent.missing_labels | join(', ') }}</span>
+            </div>
+            <a href="/clients/{{ consent.client_id }}" class="btn btn-secondary" style="background: #e74c3c; border: none;">동의서 등록</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% if missing_consents_count > 5 %}
+        <p style="color: #7f1d1d; font-size: 0.9rem; margin-top: 0.8rem;">외 {{ missing_consents_count - 5 }}명 더 있음.</p>
+    {% endif %}
+</div>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}동의서 {{ '수정' if is_edit else '등록' }} - {{ client.name }}{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 1.5rem;">{{ client.name }} 님 동의서 {{ '수정' if is_edit else '등록' }}</h2>
+
+<div class="card">
+    <form method="POST" action="{{ form_action }}" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="consent_type">동의서 종류</label>
+            <select id="consent_type" name="consent_type" required>
+                <option value="">선택하세요</option>
+                {% for value, label in consent_types %}
+                    <option value="{{ value }}" {% if consent.consent_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="status">상태</label>
+            <select id="status" name="status">
+                {% for value, label in consent_statuses %}
+                    <option value="{{ value }}" {% if consent.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="signed_at">서명일</label>
+            <input type="date" id="signed_at" name="signed_at" value="{{ consent.signed_at }}">
+        </div>
+
+        <div class="form-group">
+            <label for="expires_at">만료일</label>
+            <input type="date" id="expires_at" name="expires_at" value="{{ consent.expires_at }}">
+        </div>
+
+        <div id="onlineOptions" style="display: none;">
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+                <div style="border: 1px solid #d1d5db; border-radius: 8px; padding: 1rem; background: #f8fafc;">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.8rem;">
+                        <div>
+                            <div style="font-weight: 600; color: #1f2937;">온라인 상담 녹음·녹화 동의</div>
+                            <div style="font-size: 0.88rem; color: #6b7280;">필요한 항목만 선택하세요. 비동의 시 기록하지 않습니다.</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                        <label style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500; color: #1f2937;">
+                            <input type="checkbox" name="record_audio" {% if consent.get('record_audio') %}checked{% endif %} style="width: 18px; height: 18px;">
+                            <span>녹음 동의</span>
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500; color: #1f2937;">
+                            <input type="checkbox" name="record_video" {% if consent.get('record_video') %}checked{% endif %} style="width: 18px; height: 18px;">
+                            <span>녹화 동의</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="consent_file">첨부 파일</label>
+            {% if consent.file_path %}
+                <p style="margin-bottom: 0.5rem;">
+                    현재 파일: <a href="/download/consent/{{ consent.consent_id }}" style="color: #3b5998;">다운로드</a>
+                </p>
+            {% endif %}
+            <input type="file" id="consent_file" name="consent_file" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png">
+        </div>
+
+        <div class="form-group">
+            <label for="version">동의서 버전</label>
+            <input type="text" id="version" name="version" value="{{ consent.version or 'v1' }}" placeholder="예: v1">
+        </div>
+
+        <div class="form-group">
+            <label for="notes">메모</label>
+            <textarea id="notes" name="notes" rows="3" placeholder="특이사항이나 비고를 입력하세요">{{ consent.notes }}</textarea>
+        </div>
+
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit">{{ submit_label }}</button>
+            <a href="{{ url_for('client_detail', client_id=client.client_id) }}" class="btn btn-secondary">취소</a>
+        </div>
+    </form>
+</div>
+
+<script>
+const consentTypeSelect = document.getElementById('consent_type');
+const onlineOptions = document.getElementById('onlineOptions');
+
+function toggleOnlineOptions() {
+    if (!consentTypeSelect) return;
+    onlineOptions.style.display = consentTypeSelect.value === 'online_recording' ? 'block' : 'none';
+}
+
+if (consentTypeSelect) {
+    consentTypeSelect.addEventListener('change', toggleOnlineOptions);
+    toggleOnlineOptions();
+}
+</script>
+
+{% endblock %}

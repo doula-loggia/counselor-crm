@@ -1,10 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}{{ session_data.name }} - 회기 상세{% endblock %}
+{% block title %}{{ session_data.participant_display }} - 회기 상세{% endblock %}
 
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-    <h2>회기 상세 - {{ session_data.name }} 님</h2>
+<h2>
+    회기 상세 - {{ session_data.participant_display }}
+    {% if session_data.session_number %}
+        <span style="font-size: 0.95rem; color: #4b5563; font-weight: 500; margin-left: 0.6rem;">({{ session_data.session_number | int }}회차)</span>
+    {% endif %}
+</h2>
     <div style="display: flex; gap: 0.5rem;">
         <a href="/sessions/{{ session_data.session_id }}/edit" class="btn" style="background: #27ae60;">수정</a>
         <a href="/sessions" class="btn btn-secondary">목록으로</a>
@@ -14,9 +19,32 @@
 <div class="card" style="margin-bottom: 1.5rem;">
     <h3 style="margin-bottom: 1rem;">기본 정보</h3>
     <table style="margin: 0;">
+        {% if session_data.session_number %}
         <tr>
-            <th style="width: 20%;">내담자</th>
-            <td><strong>{{ session_data.name }}</strong></td>
+            <th>회차</th>
+            <td>{{ session_data.session_number | int }}회차</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <th style="width: 20%;">상담 형태</th>
+            <td>{{ session_data.counseling_type_label }}</td>
+        </tr>
+        <tr>
+            <th>참여 내담자</th>
+            <td>
+                {% if session_data.participant_names %}
+                    {% for name in session_data.participant_names %}
+                        <span style="background: #ecf0f1; color: #34495e; padding: 0.3rem 0.6rem; border-radius: 3px; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.4rem; margin-right: 0.3rem; margin-bottom: 0.3rem;">
+                            {{ name }}
+                            {% if loop.index0 == 0 and session_data.participant_count|int > 1 %}
+                                <span style="display: inline-block; background: #2563eb; color: #ffffff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 999px;">주</span>
+                            {% endif %}
+                        </span>
+                    {% endfor %}
+                {% else %}
+                    <span>미지정</span>
+                {% endif %}
+            </td>
         </tr>
         <tr>
             <th>날짜</th>
@@ -59,6 +87,15 @@
         </tr>
         {% endif %}
     </table>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h3 style="margin-bottom: 1rem;">상담자 소견</h3>
+    {% if session_data.counselor_notes %}
+        <p style="margin: 0; white-space: pre-wrap;">{{ session_data.counselor_notes }}</p>
+    {% else %}
+        <p style="margin: 0; color: #7f8c8d;">등록된 상담자 소견이 없습니다.</p>
+    {% endif %}
 </div>
 
 <div class="card" style="margin-bottom: 1.5rem;">

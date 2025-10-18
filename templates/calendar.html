@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}일정 캘린더 - 심리상담사 내담자 관리 시스템{% endblock %}
+
+{% block content %}
+<h2>일정 캘린더</h2>
+
+<div class="card" style="padding: 1rem 1.5rem; margin-bottom: 1.5rem;">
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+        <div>
+            <h3 style="margin-bottom: 0.5rem;">상담 회기와 상담자 일정을 한 곳에서 확인하세요</h3>
+            <p style="color: #6b7280; font-size: 0.9rem; margin: 0;">파란색은 상담 회기, 주황색은 상담자 개인 일정입니다.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <a href="{{ url_for('counselor_events_list') }}" class="btn btn-secondary" style="white-space: nowrap;">상담자 일정 관리</a>
+            <div style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                <span style="width: 12px; height: 12px; border-radius: 50%; background: #3b82f6; display: inline-block;"></span>
+                <span style="color: #1f2937; font-size: 0.9rem;">상담 회기</span>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                <span style="width: 12px; height: 12px; border-radius: 50%; background: #f97316; display: inline-block;"></span>
+                <span style="color: #1f2937; font-size: 0.9rem;">개인 일정</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="calendar" style="background: white; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08);"></div>
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+<style>
+#calendar .fc-event-session {
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+#calendar .fc-event-personal {
+    border-radius: 999px;
+    font-weight: 600;
+    border-width: 2px !important;
+}
+
+#calendar .fc-event-personal a {
+    color: #1f2937 !important;
+}
+
+#calendar .fc-event-session a {
+    color: #ffffff !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+    const events = {{ events_json|safe }};
+    const sessionStyles = { bg: '#2563eb', border: '#1d4ed8', text: '#ffffff', badge: '#2563eb' };
+    const personalStyles = { bg: '#f97316', border: '#ea580c', text: '#1f2937', badge: '#f97316' };
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+        },
+        locale: 'ko',
+        slotMinTime: '07:00:00',
+        slotMaxTime: '22:00:00',
+        height: 'auto',
+        nowIndicator: true,
+        selectable: true,
+        events: events.map(event => ({
+            ...event,
+            backgroundColor: event.category === 'session' ? sessionStyles.bg : personalStyles.bg,
+            borderColor: event.category === 'session' ? sessionStyles.border : personalStyles.border,
+            textColor: event.category === 'session' ? sessionStyles.text : personalStyles.text,
+            classNames: [event.category === 'session' ? 'fc-event-session' : 'fc-event-personal']
+        })),
+        dateClick: function(info) {
+            const dateStr = info.dateStr;
+            window.location.href = `/calendar/events/new?date=${encodeURIComponent(dateStr)}`;
+        },
+        eventClick: function(info) {
+            if (info.event.url) {
+                info.jsEvent.preventDefault();
+                window.location.href = info.event.url;
+            }
+        },
+        eventDidMount: function(info) {
+            const tooltip = document.createElement('div');
+            tooltip.style.position = 'absolute';
+            tooltip.style.background = 'rgba(15, 23, 42, 0.92)';
+            tooltip.style.color = '#fff';
+            tooltip.style.fontSize = '0.85rem';
+            tooltip.style.padding = '0.45rem 0.6rem';
+            tooltip.style.borderRadius = '6px';
+            tooltip.style.boxShadow = '0 8px 20px rgba(15,23,42,0.25)';
+            tooltip.style.display = 'none';
+            tooltip.style.zIndex = '1000';
+            tooltip.innerHTML = getTooltipContent(info.event.extendedProps, info.event.title, info.event.start, info.event.end);
+
+            const eventEl = info.el;
+            eventEl.style.position = 'relative';
+            eventEl.appendChild(tooltip);
+
+            eventEl.addEventListener('mouseenter', () => {
+                tooltip.style.display = 'block';
+                tooltip.style.top = '-110%';
+                tooltip.style.left = '0';
+            });
+            eventEl.addEventListener('mouseleave', () => {
+                tooltip.style.display = 'none';
+            });
+        }
+    });
+
+    calendar.render();
+
+    function formatDateRange(start, end) {
+        const startDate = new Date(start);
+        const endDate = end ? new Date(end) : null;
+        const options = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        const startText = startDate.toLocaleString('ko-KR', options);
+        if (!endDate) return startText;
+        const endText = endDate.toLocaleString('ko-KR', options);
+        return `${startText} ~ ${endText}`;
+    }
+
+    function getTooltipContent(props, title, start, end) {
+        const isSession = props.category === 'session';
+        const colors = isSession ? sessionStyles : personalStyles;
+        const badgeLabel = isSession ? '🗓 상담 회기' : '⭐ 개인 일정';
+        let html = `<div style="margin-bottom: 0.25rem;"><span style="display: inline-block; background: ${colors.badge}; color: ${isSession ? '#ffffff' : '#1f2937'}; padding: 0.15rem 0.45rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;">${badgeLabel}</span></div>`;
+        html += `<div style="margin-bottom: 0.25rem; font-weight: 600;">${title}</div>`;
+        html += `<div style="margin-bottom: 0.25rem; color: ${colors.badge};">${formatDateRange(start, end)}</div>`;
+        if (props.category === 'session') {
+            if (props.participants && props.participants.length) {
+                html += `<div>참여자: ${props.participants.join(', ')}</div>`;
+            }
+            if (props.mode) {
+                html += `<div>방식: ${props.mode}</div>`;
+            }
+        } else {
+            if (props.counselor) {
+                html += `<div>상담자: ${props.counselor}</div>`;
+            }
+            if (props.location) {
+                html += `<div>장소: ${props.location}</div>`;
+            }
+            if (props.description) {
+                html += `<div style="margin-top: 0.25rem; color: #c4b5fd;">${props.description}</div>`;
+            }
+        }
+        return html;
+    }
+});
+</script>
+{% endblock %}

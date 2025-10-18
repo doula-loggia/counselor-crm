@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}상담자 일정 관리 - 심리상담사 내담자 관리 시스템{% endblock %}
+
+{% block content %}
+<h2>상담자 일정 관리</h2>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
+    <div>
+        <p style="margin: 0; color: #6b7280;">개인 일정을 등록하면 캘린더에서 상담 회기와 함께 확인할 수 있습니다.</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('calendar_view') }}" class="btn btn-secondary">캘린더로 이동</a>
+        <a href="{{ url_for('counselor_event_new') }}" class="btn">새 일정 등록</a>
+    </div>
+</div>
+
+<div class="card">
+    {% if events %}
+    <table>
+        <thead>
+            <tr>
+                <th style="min-width: 160px;">시작</th>
+                <th style="min-width: 160px;">종료</th>
+                <th>제목</th>
+                <th>구분</th>
+                <th>상담자</th>
+                <th>장소</th>
+                <th style="width: 140px;">관리</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in events %}
+            <tr>
+                <td>{{ event.start or '-' }}</td>
+                <td>{{ event.end or '-' }}</td>
+                <td>
+                    <strong>{{ event.title }}</strong>
+                    {% if event.description %}
+                        <div style="color: #6b7280; font-size: 0.85rem; margin-top: 0.2rem; white-space: pre-wrap;">{{ event.description }}</div>
+                    {% endif %}
+                </td>
+                <td>{{ event.category or 'personal' }}</td>
+                <td>{{ event.counselor or '-' }}</td>
+                <td>{{ event.location or '-' }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('counselor_event_delete', event_id=event.event_id) }}" onsubmit="return confirm('이 일정을 삭제할까요?');" style="display: flex; gap: 0.5rem; align-items: center;">
+                        <a href="{{ url_for('counselor_event_edit', event_id=event.event_id) }}" style="color: #2563eb; text-decoration: none; font-weight: 500;">수정</a>
+                        <button type="submit" style="background: none; border: none; color: #dc2626; cursor: pointer; font-weight: 500;">삭제</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="margin: 0; text-align: center; color: #6b7280; padding: 2rem;">등록된 상담자 일정이 없습니다.</p>
+    {% endif %}
+</div>
+{% endblock %}

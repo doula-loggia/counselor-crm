@@ -36,6 +36,13 @@
             </td>
         </tr>
         <tr>
+            <th>연령대</th>
+            <td>
+                {% set life_stage_labels = {'infant': '유아', 'child': '아동', 'youth': '청소년', 'adult': '성인'} %}
+                {{ life_stage_labels.get(client.life_stage, '미지정') }}
+            </td>
+        </tr>
+        <tr>
             <th>성별</th>
             <td>{{ client.gender }}</td>
         </tr>
@@ -46,10 +53,34 @@
         <tr>
             <th>상태</th>
             <td>
-                {% if client.status == 'active' %}
-                    <span style="color: #27ae60; font-weight: bold;">활성</span>
+                {% if client.status == 'counseling' %}
+                    <span style="color: #27ae60; font-weight: bold;">상담중</span>
+                {% elif client.status == 'reengaged' %}
+                    <span style="color: #1d4ed8; font-weight: bold;">재상담</span>
                 {% else %}
-                    <span style="color: #95a5a6;">비활성</span>
+                    <span style="color: #95a5a6;">종결</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% if client.reengaged_at %}
+        <tr>
+            <th>재상담 시작일</th>
+            <td>{{ client.reengaged_at }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <th>상담 유입 경로</th>
+            <td>
+                {% set source_label = referral_source_labels.get(client.referral_source) %}
+                {% if source_label %}
+                    {{ source_label }}
+                    {% if client.referral_source_detail %}
+                        <span style="color: #6b7280; margin-left: 0.5rem;">{{ client.referral_source_detail }}</span>
+                    {% endif %}
+                {% elif client.referral_source_detail %}
+                    {{ client.referral_source_detail }}
+                {% else %}
+                    -
                 {% endif %}
             </td>
         </tr>
@@ -69,6 +100,20 @@
             <td style="white-space: pre-wrap;">{{ client.counseling_history }}</td>
         </tr>
         {% endif %}
+        {% set psych_test_names = client.psychological_test_names.split(',') if client.psychological_test_names else [] %}
+        {% if psych_test_names %}
+        <tr>
+            <th>심리검사 명칭</th>
+            <td>
+                {% for raw_name in psych_test_names %}
+                    {% set trimmed_name = raw_name.strip() %}
+                    {% if trimmed_name %}
+                        <span style="background: #8e44ad; color: white; padding: 0.3rem 0.6rem; border-radius: 3px; font-size: 0.9rem; display: inline-block; margin-right: 0.3rem; margin-bottom: 0.3rem;">{{ trimmed_name }}</span>
+                    {% endif %}
+                {% endfor %}
+            </td>
+        </tr>
+        {% endif %}
         {% if client.psychological_test_file %}
         <tr>
             <th>심리검사 파일</th>
@@ -79,13 +124,120 @@
             </td>
         </tr>
         {% endif %}
-        {% if client.notes %}
+{% if client.notes %}
         <tr>
-            <th>메모</th>
+            <th>상담자 메모</th>
             <td style="white-space: pre-wrap;">{{ client.notes }}</td>
         </tr>
         {% endif %}
     </table>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h3>동의서 관리 ({{ consents|length }}건)</h3>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <a href="/clients/{{ client.client_id }}/consents/bootstrap" class="btn btn-secondary">필수 동의서 자동생성</a>
+            <a href="/clients/{{ client.client_id }}/consents/new" class="btn">동의서 기록</a>
+        </div>
+    </div>
+    {% if consents %}
+    <table>
+        <thead>
+            <tr>
+                <th>동의서</th>
+                <th>상태</th>
+                <th>서명일</th>
+                <th>만료일</th>
+                <th>첨부</th>
+                <th>관리</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for consent in consents %}
+            <tr>
+                <td>{{ consent_types.get(consent.consent_type, consent.consent_type) }}</td>
+                <td>
+                    {% set status_label = consent_statuses.get(consent.status, consent.status) %}
+                    {% if consent.status == 'signed' %}
+                        <span style="color: #27ae60; font-weight: 600;">{{ status_label }}</span>
+                    {% elif consent.status == 'pending' %}
+                        <span style="color: #f39c12; font-weight: 600;">{{ status_label }}</span>
+                    {% else %}
+                        <span style="color: #e74c3c; font-weight: 600;">{{ status_label }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ consent.signed_at or '-' }}</td>
+                <td>{{ consent.expires_at or '-' }}</td>
+                <td>
+                    {% if consent.file_path %}
+                        <a href="/download/consent/{{ consent.consent_id }}" style="color: #3b5998;">파일</a>
+                    {% else %}
+                        <span style="color: #95a5a6;">없음</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/clients/{{ client.client_id }}/consents/{{ consent.consent_id }}/edit" style="color: #27ae60; margin-right: 0.5rem;">수정</a>
+                    <form method="POST" action="/clients/{{ client.client_id }}/consents/{{ consent.consent_id }}/delete" style="display: inline;" onsubmit="return confirm('동의서를 삭제하시겠습니까?');">
+                        <button type="submit" style="background: none; border: none; color: #e74c3c; cursor: pointer; padding: 0;">삭제</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #7f8c8d; padding: 1.5rem;">등록된 동의서가 없습니다.</p>
+    {% endif %}
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h3>심리검사 기록 ({{ examinees|length }}건)</h3>
+        <div style="position: relative;">
+            <button type="button" id="examineeActionsBtn" class="btn" style="display: inline-flex; align-items: center; gap: 0.3rem;">
+                검사 기록 추가 ▾
+            </button>
+            <div id="examineeActionsMenu" style="display: none; position: absolute; right: 0; top: calc(100% + 0.3rem); background: #ffffff; border: 1px solid #d1d5db; border-radius: 6px; box-shadow: 0 8px 16px rgba(15, 23, 42, 0.15); min-width: 180px; z-index: 2000;">
+                <a href="/examinees/new?client_id={{ client.client_id }}" style="display: block; padding: 0.7rem 1rem; color: #1f2937; text-decoration: none; border-bottom: 1px solid #e5e7eb;">
+                    새 수검자 등록
+                    <div style="font-size: 0.8rem; color: #6b7280; margin-top: 0.2rem;">내담자 정보를 바탕으로 신규 검사 등록</div>
+                </a>
+                <a href="/examinees/new?client_id={{ client.client_id }}&purpose=followup" style="display: block; padding: 0.7rem 1rem; color: #1f2937; text-decoration: none;">
+                    추가 검사 기록
+                    <div style="font-size: 0.8rem; color: #6b7280; margin-top: 0.2rem;">추가·추적 검사를 기록할 때 사용</div>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% if examinees %}
+    <table>
+        <thead>
+            <tr>
+                <th>검사일</th>
+                <th>검사 종류</th>
+                <th>도구</th>
+                <th>상태</th>
+                <th>관리</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for examinee in examinees %}
+            <tr>
+                <td>{{ examinee.assessment_date or '-' }}</td>
+                <td>{{ examinee.assessment_type or '-' }}</td>
+                <td>{{ examinee.assessment_tool or '-' }}</td>
+                <td>{{ examinee_status_labels.get(examinee.status, examinee.status or '-') }}</td>
+                <td>
+                    <a href="/examinees/{{ examinee.examinee_id }}" style="color: #3b5998; text-decoration: none;">상세</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #7f8c8d; padding: 1.5rem;">등록된 심리검사 기록이 없습니다.</p>
+    {% endif %}
 </div>
 
 <div class="card">
@@ -99,7 +251,8 @@
         <thead>
             <tr>
                 <th>날짜</th>
-                <th>이름</th>
+                <th>상담 형태</th>
+                <th>참여자</th>
                 <th>모드</th>
                 <th>목표</th>
                 <th>비용</th>
@@ -119,7 +272,8 @@
                         {{ session.date }}
                     </a>
                 </td>
-                <td>{{ client.name }}</td>
+                <td>{{ '집단' if session.counseling_type == 'group' else '개별' }}</td>
+                <td>{{ session.participant_display }}</td>
                 <td>{{ session.mode }}</td>
                 <td>{{ session.goals[:50] }}{% if session.goals|length > 50 %}...{% endif %}</td>
                 <td>{% if session.fee %}{{ (session.fee | float / 10000) | int }}만원{% endif %}</td>
@@ -153,6 +307,31 @@
 </div>
 
 <script>
+const examineeActionsBtn = document.getElementById('examineeActionsBtn');
+const examineeActionsMenu = document.getElementById('examineeActionsMenu');
+
+function closeExamineeMenu() {
+    if (examineeActionsMenu) {
+        examineeActionsMenu.style.display = 'none';
+    }
+}
+
+if (examineeActionsBtn && examineeActionsMenu) {
+    examineeActionsBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const isOpen = examineeActionsMenu.style.display === 'block';
+        examineeActionsMenu.style.display = isOpen ? 'none' : 'block';
+    });
+    
+    document.addEventListener('click', (event) => {
+        if (!examineeActionsMenu.contains(event.target) && event.target !== examineeActionsBtn) {
+            closeExamineeMenu();
+        }
+    });
+    
+    window.addEventListener('blur', closeExamineeMenu);
+}
+
 const birthYear = {{ client.birth_year | int if client.birth_year else 0 }};
 const ageDisplay = document.getElementById('age_display');
 

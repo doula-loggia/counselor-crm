@@ -15,8 +15,9 @@
     <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
         <span style="font-weight: bold; color: #34495e;">상태:</span>
         <a href="/clients" class="btn {% if not status_filter %}btn-secondary{% else %}btn{% endif %}" style="padding: 0.5rem 1rem; font-size: 0.9rem;">전체</a>
-        <a href="/clients?status=active" class="btn {% if status_filter == 'active' %}btn-secondary{% else %}btn{% endif %}" style="padding: 0.5rem 1rem; font-size: 0.9rem;">활성</a>
-        <a href="/clients?status=inactive" class="btn {% if status_filter == 'inactive' %}btn-secondary{% else %}btn{% endif %}" style="padding: 0.5rem 1rem; font-size: 0.9rem;">비활성</a>
+        <a href="/clients?status=counseling" class="btn {% if status_filter == 'counseling' %}btn-secondary{% else %}btn{% endif %}" style="padding: 0.5rem 1rem; font-size: 0.9rem;">상담중</a>
+        <a href="/clients?status=reengaged" class="btn {% if status_filter == 'reengaged' %}btn-secondary{% else %}btn{% endif %}" style="padding: 0.5rem 1rem; font-size: 0.9rem;">재상담</a>
+        <a href="/clients?status=closed" class="btn {% if status_filter == 'closed' %}btn-secondary{% else %}btn{% endif %}" style="padding: 0.5rem 1rem; font-size: 0.9rem;">종결</a>
     </div>
     
     <form method="GET" class="search-box">
@@ -37,7 +38,9 @@
                 <th>이름</th>
                 <th>전화번호</th>
                 <th>이메일</th>
+                <th>유입 경로</th>
                 <th>첫 회기 날짜</th>
+                <th>연령대</th>
                 <th>상태</th>
                 <th>태그</th>
                 <th>관리</th>
@@ -49,12 +52,29 @@
                 <td><a href="/clients/{{ client.client_id }}" style="color: #2c3e50; text-decoration: none;"><strong>{{ client.name }}</strong></a></td>
                 <td>{{ client.phone }}</td>
                 <td>{{ client.email }}</td>
+                <td>
+                    {% set source_label = referral_source_labels.get(client.referral_source) %}
+                    {% if source_label or client.referral_source_detail %}
+                        {{ source_label or '-' }}
+                        {% if client.referral_source_detail %}
+                            <span style="color: #6b7280; margin-left: 0.3rem;">{{ client.referral_source_detail }}</span>
+                        {% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
                 <td>{{ client.first_session_date }}</td>
                 <td>
-                    {% if client.status == 'active' %}
-                        <span style="color: #27ae60; font-weight: bold;">활성</span>
+                    {% set life_stage_labels = {'infant': '유아', 'child': '아동', 'youth': '청소년', 'adult': '성인'} %}
+                    {{ life_stage_labels.get(client.life_stage, '미지정') }}
+                </td>
+                <td>
+                    {% if client.status == 'counseling' %}
+                        <span style="color: #27ae60; font-weight: bold;">상담중</span>
+                    {% elif client.status == 'reengaged' %}
+                        <span style="color: #1d4ed8; font-weight: bold;">재상담</span>
                     {% else %}
-                        <span style="color: #95a5a6;">비활성</span>
+                        <span style="color: #95a5a6;">종결</span>
                     {% endif %}
                 </td>
                 <td>

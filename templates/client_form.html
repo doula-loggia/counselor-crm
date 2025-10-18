@@ -13,19 +13,10 @@
         </div>
         
         <div class="form-group">
-            <label for="phone">전화번호</label>
-            <input type="tel" id="phone" name="phone" placeholder="010-1234-5678">
-        </div>
-        
-        <div class="form-group">
-            <label for="email">이메일</label>
-            <input type="email" id="email" name="email">
-        </div>
-        
-        <div class="form-group">
             <label for="birth_year">출생연도</label>
             <input type="number" id="birth_year" name="birth_year" placeholder="1990" step="1">
             <span id="age_display" style="color: #7f8c8d; font-size: 0.9rem; margin-top: 0.3rem; display: none;"></span>
+            <span id="life_stage_display" style="color: #3498db; font-size: 0.9rem; margin-top: 0.3rem; display: none;"></span>
         </div>
         
         <div class="form-group">
@@ -39,9 +30,34 @@
         </div>
         
         <div class="form-group">
-            <label for="first_session_date">첫 회기 날짜</label>
-            <input type="date" id="first_session_date" name="first_session_date">
+            <label for="phone">전화번호</label>
+            <input type="tel" id="phone" name="phone" placeholder="010-1234-5678">
         </div>
+        
+<div class="form-group">
+    <label for="email">이메일</label>
+    <input type="email" id="email" name="email">
+</div>
+
+<div class="form-group">
+    <label for="referral_source">상담 유입 경로</label>
+    <select id="referral_source" name="referral_source">
+        <option value="">선택안함</option>
+        {% for value, label in referral_source_choices %}
+        <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<div class="form-group" id="referral_source_detail_group" style="display: none;">
+    <label for="referral_source_detail">유입 경로 상세</label>
+    <input type="text" id="referral_source_detail" name="referral_source_detail" placeholder="기타 유입 경로를 입력하세요">
+</div>
+
+<div class="form-group">
+    <label for="first_session_date">첫 회기 날짜</label>
+    <input type="date" id="first_session_date" name="first_session_date">
+</div>
         
         <div class="form-group">
             <label for="tagInput">태그 (쉼표로 구분)</label>
@@ -65,13 +81,22 @@
         </div>
         
         <div class="form-group">
+            <label for="psychTestInput">심리검사 명칭 (쉼표로 구분)</label>
+            <div id="psychTestContainer" style="border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; min-height: 50px; display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; background: white;">
+                <input type="text" id="psychTestInput" style="border: none; outline: none; flex: 1; min-width: 150px; padding: 0.3rem;" placeholder="심리검사 명칭 입력 후 쉼표 또는 엔터">
+            </div>
+            <input type="hidden" id="psychological_test_names" name="psychological_test_names">
+            <small style="color: #7f8c8d; font-size: 0.85rem; margin-top: 0.3rem; display: block;">심리검사 명칭을 입력한 뒤 쉼표(,) 또는 엔터로 추가하세요.</small>
+        </div>
+        
+        <div class="form-group">
             <label for="psychological_test">심리검사 결과 파일</label>
             <input type="file" id="psychological_test" name="psychological_test" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png">
             <small style="color: #7f8c8d; font-size: 0.85rem; margin-top: 0.3rem; display: block;">PDF, DOC, DOCX, TXT, JPG, JPEG, PNG 파일 업로드 가능</small>
         </div>
         
         <div class="form-group">
-            <label for="notes">메모</label>
+            <label for="notes">상담자 메모</label>
             <textarea id="notes" name="notes" placeholder="추가 정보나 메모를 입력하세요"></textarea>
         </div>
         
@@ -85,6 +110,7 @@
 <script>
 const existingTags = {{ existing_tags|tojson }};
 let selectedTags = [];
+const clientForm = document.getElementById('clientForm');
 
 const tagInput = document.getElementById('tagInput');
 const tagsContainer = document.getElementById('tagsContainer');
@@ -165,21 +191,25 @@ tagInput.addEventListener('blur', () => {
     }, 200);
 });
 
-document.getElementById('clientForm').addEventListener('submit', (e) => {
-    const currentInput = tagInput.value.trim();
-    if (currentInput) {
-        addTag(currentInput);
-    }
-});
-
 const birthYearInput = document.getElementById('birth_year');
 const ageDisplay = document.getElementById('age_display');
+const lifeStageDisplay = document.getElementById('life_stage_display');
+
+function computeLifeStage(birthYear) {
+    const currentYear = new Date().getFullYear();
+    const age = currentYear - birthYear;
+    if (age <= 6) return '유아';
+    if (age <= 12) return '아동';
+    if (age <= 18) return '청소년';
+    return '성인';
+}
 
 birthYearInput.addEventListener('input', (e) => {
     const birthYear = parseInt(e.target.value);
     
     if (!birthYear || birthYear < 1900 || birthYear > new Date().getFullYear()) {
         ageDisplay.style.display = 'none';
+        lifeStageDisplay.style.display = 'none';
         return;
     }
     
@@ -188,7 +218,109 @@ birthYearInput.addEventListener('input', (e) => {
     
     ageDisplay.textContent = `만 ${age}세`;
     ageDisplay.style.display = 'block';
+    lifeStageDisplay.textContent = `연령대: ${computeLifeStage(birthYear)}`;
+    lifeStageDisplay.style.display = 'block';
 });
+
+const psychTestContainer = document.getElementById('psychTestContainer');
+const psychTestInput = document.getElementById('psychTestInput');
+const psychTestHiddenInput = document.getElementById('psychological_test_names');
+let psychTestNames = [];
+
+function refreshPsychTestNames() {
+    psychTestHiddenInput.value = psychTestNames.join(', ');
+    
+    const existingTagElements = psychTestContainer.querySelectorAll('.psych-test-tag');
+    existingTagElements.forEach(el => el.remove());
+    
+    psychTestNames.forEach(name => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'psych-test-tag';
+        tagEl.style.cssText = 'background: #8e44ad; color: white; padding: 0.3rem 0.6rem; border-radius: 3px; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.3rem;';
+        
+        const textSpan = document.createElement('span');
+        textSpan.textContent = name;
+        
+        const removeBtn = document.createElement('span');
+        removeBtn.textContent = '×';
+        removeBtn.style.cursor = 'pointer';
+        removeBtn.style.fontWeight = 'bold';
+        removeBtn.addEventListener('click', () => {
+            psychTestNames = psychTestNames.filter(item => item !== name);
+            refreshPsychTestNames();
+        });
+        
+        tagEl.appendChild(textSpan);
+        tagEl.appendChild(removeBtn);
+        psychTestContainer.insertBefore(tagEl, psychTestInput);
+    });
+}
+
+function addPsychTestNamesFromInput(rawValue) {
+    if (!rawValue) return;
+    
+    const names = rawValue.split(',').map(name => name.trim()).filter(name => name);
+    let updated = false;
+    
+    names.forEach(name => {
+        if (!psychTestNames.includes(name)) {
+            psychTestNames.push(name);
+            updated = true;
+        }
+    });
+    
+    if (updated) {
+        refreshPsychTestNames();
+    }
+    
+    psychTestInput.value = '';
+}
+
+psychTestInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        addPsychTestNamesFromInput(psychTestInput.value);
+    }
+});
+
+psychTestInput.addEventListener('blur', () => {
+    addPsychTestNamesFromInput(psychTestInput.value);
+});
+
+function toggleReferralDetail(value) {
+    const group = document.getElementById('referral_source_detail_group');
+    if (!group) return;
+    if (value === 'other') {
+        group.style.display = 'block';
+    } else {
+        group.style.display = 'none';
+        const detailInput = document.getElementById('referral_source_detail');
+        if (detailInput) {
+            detailInput.value = '';
+        }
+    }
+}
+
+const referralSourceSelect = document.getElementById('referral_source');
+if (referralSourceSelect) {
+    toggleReferralDetail(referralSourceSelect.value);
+    referralSourceSelect.addEventListener('change', (event) => {
+        toggleReferralDetail(event.target.value);
+    });
+}
+
+clientForm.addEventListener('submit', () => {
+    const currentTagInput = tagInput.value.trim();
+    if (currentTagInput) {
+        addTag(currentTagInput);
+    }
+    
+    if (psychTestInput.value.trim()) {
+        addPsychTestNamesFromInput(psychTestInput.value);
+    }
+});
+
+refreshPsychTestNames();
 </script>
 
 {% endblock %}

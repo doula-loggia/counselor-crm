@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}수검자 목록 - 심리상담사 내담자 관리 시스템{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <h2 style="margin: 0;">수검자 목록</h2>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="/examinees/new" class="btn">새 수검자 등록</a>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <form method="GET" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+        <div style="flex: 1 1 220px;">
+            <label for="search">검색</label>
+            <input type="text" id="search" name="search" value="{{ search_query }}" placeholder="이름, 검사 종류, 검사 도구">
+        </div>
+        <div style="flex: 1 1 180px;">
+            <label for="status">상태</label>
+            <select id="status" name="status">
+                <option value="">전체</option>
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="flex: 1 1 180px;">
+            <label for="source">출처</label>
+            <select id="source" name="source">
+                <option value="">전체</option>
+                {% for value, label in source_choices %}
+                    <option value="{{ value }}" {% if source_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="flex: 0 0 auto;">
+            <button type="submit">검색</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    {% if examinees %}
+    <table>
+        <thead>
+            <tr>
+                <th>이름</th>
+                <th>검사일</th>
+                <th>검사 종류</th>
+                <th>검사 도구</th>
+                <th>상태</th>
+                <th>출처</th>
+                <th>관리</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for examinee in examinees %}
+            <tr>
+                <td>
+                    <a href="/examinees/{{ examinee.examinee_id }}" style="color: #3b5998; font-weight: 600; text-decoration: none;">
+                        {{ examinee.name }}
+                    </a>
+                </td>
+                <td>{{ examinee.assessment_date or '-' }}</td>
+                <td>{{ examinee.assessment_type or '-' }}</td>
+                <td>{{ examinee.assessment_tool or '-' }}</td>
+                <td>{{ status_labels.get(examinee.status, examinee.status) }}</td>
+                <td>
+                    {% if examinee.source == 'existing_client' and examinee.linked_client_id %}
+                        <span class="tooltip-wrapper" style="color: #27ae60; font-weight: 600; cursor: pointer;">
+                            기존 내담자
+                            <span class="tooltip-content">
+                                내담자 ID: {{ examinee.linked_client_id }}<br>
+                                {% if examinee.linked_client_name %}이름: {{ examinee.linked_client_name }}{% else %}이름 정보 없음{% endif %}
+                            </span>
+                        </span>
+                    {% else %}
+                        {{ source_labels.get(examinee.source, examinee.source) }}
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/examinees/{{ examinee.examinee_id }}" style="color: #27ae60; text-decoration: none;">상세</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #7f8c8d; padding: 2rem;">
+        등록된 수검자가 없습니다.
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

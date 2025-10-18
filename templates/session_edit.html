@@ -8,13 +8,34 @@
 <div class="card">
     <form method="POST">
         <div class="form-group">
-            <label for="client_id">내담자 *</label>
+            <label for="counseling_type">상담 형태 *</label>
+            <select id="counseling_type" name="counseling_type" required>
+                <option value="individual" {% if session_data.counseling_type != 'group' %}selected{% endif %}>개별 상담</option>
+                <option value="group" {% if session_data.counseling_type == 'group' %}selected{% endif %}>집단 상담</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="client_id">대표 내담자 *</label>
             <select id="client_id" name="client_id" required>
                 <option value="">내담자를 선택하세요</option>
                 {% for client in clients %}
                 <option value="{{ client.client_id }}" {% if client.client_id == session_data.client_id %}selected{% endif %}>{{ client.name }} ({{ client.client_id }})</option>
                 {% endfor %}
             </select>
+        </div>
+
+        <div class="form-group" id="participant_group" style="display: none;">
+            <label for="participant_ids">참여 내담자 *</label>
+            <select id="participant_ids" name="participant_ids" multiple size="6">
+                {% set selected_participants = session_data.participant_ids or [] %}
+                {% for client in clients %}
+                <option value="{{ client.client_id }}" {% if client.client_id in selected_participants %}selected{% endif %}>{{ client.name }} ({{ client.client_id }})</option>
+                {% endfor %}
+            </select>
+            <p style="color: #6b7280; font-size: 0.9rem; margin-top: 0.5rem;">
+                집단 상담일 경우 함께 참여한 내담자를 모두 선택해주세요. 대표 내담자도 포함됩니다.
+            </p>
         </div>
         
         <div class="form-group">
@@ -55,7 +76,12 @@
             <label for="notes">회기 노트</label>
             <textarea id="notes" name="notes" placeholder="회기 내용 메모">{{ session_data.notes }}</textarea>
         </div>
-        
+
+        <div class="form-group">
+            <label for="counselor_notes">상담자 소견</label>
+            <textarea id="counselor_notes" name="counselor_notes" placeholder="상담자의 관찰 및 소견을 정리하세요">{{ session_data.counselor_notes }}</textarea>
+        </div>
+
         <div class="form-group">
             <label for="next_actions">다음 단계</label>
             <textarea id="next_actions" name="next_actions" placeholder="다음 회기까지 할 일이나 숙제">{{ session_data.next_actions }}</textarea>
@@ -108,4 +134,53 @@
         </div>
     </form>
 </div>
+
+<script>
+function toggleParticipantSelector(type) {
+    const participantGroup = document.getElementById('participant_group');
+    if (!participantGroup) return;
+    participantGroup.style.display = type === 'group' ? 'block' : 'none';
+    if (type !== 'group') {
+        const participantSelect = document.getElementById('participant_ids');
+        if (participantSelect) {
+            for (const option of participantSelect.options) {
+                option.selected = false;
+            }
+        }
+    }
+}
+
+function syncPrimaryToParticipants() {
+    const typeField = document.getElementById('counseling_type');
+    const participantSelect = document.getElementById('participant_ids');
+    const primarySelect = document.getElementById('client_id');
+    if (!typeField || !participantSelect || !primarySelect) return;
+    if (typeField.value !== 'group') return;
+    const primaryValue = primarySelect.value;
+    if (!primaryValue) return;
+    for (const option of participantSelect.options) {
+        if (option.value === primaryValue) {
+            option.selected = true;
+            break;
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const typeField = document.getElementById('counseling_type');
+    const participantSelect = document.getElementById('participant_ids');
+    const primarySelect = document.getElementById('client_id');
+    if (typeField) {
+        toggleParticipantSelector(typeField.value);
+        typeField.addEventListener('change', function (event) {
+            toggleParticipantSelector(event.target.value);
+            syncPrimaryToParticipants();
+        });
+    }
+    if (primarySelect) {
+        primarySelect.addEventListener('change', syncPrimaryToParticipants);
+    }
+    syncPrimaryToParticipants();
+});
+</script>
 {% endblock %}

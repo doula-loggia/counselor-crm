@@ -242,6 +242,48 @@
             color: #3b5998;
             font-weight: 700;
         }
+        .stat-card .subtext {
+            margin-top: 0.4rem;
+            color: #4b5563;
+            font-size: 0.85rem;
+        }
+
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip-wrapper .tooltip-content {
+            display: none;
+            position: absolute;
+            top: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(51, 65, 85, 0.95);
+            color: #fff;
+            padding: 0.6rem 0.85rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.25);
+            z-index: 100;
+        }
+
+        .tooltip-wrapper .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 6px;
+            border-style: solid;
+            border-color: transparent transparent rgba(51, 65, 85, 0.95) transparent;
+        }
+
+        .tooltip-wrapper:hover .tooltip-content,
+        .tooltip-wrapper:focus-within .tooltip-content {
+            display: block;
+        }
         
         h2 {
             color: #1f2937;
@@ -261,7 +303,9 @@
             <li><a href="/">홈</a></li>
             <li><a href="/clients">내담자</a></li>
             <li><a href="/sessions">회기</a></li>
-            <li><a href="/monthly-revenue">월별 수익</a></li>
+            <li><a href="/examinees">수검자</a></li>
+            <li><a href="/calendar">일정 캘린더</a></li>
+            <li><a href="/monthly-revenue">수입 통계</a></li>
             <li><a href="/logout">로그아웃</a></li>
         </ul>
     </nav>

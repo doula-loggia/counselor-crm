@@ -17,7 +17,9 @@
         <thead>
             <tr>
                 <th>날짜</th>
-                <th>내담자</th>
+                <th>회차</th>
+                <th>상담 형태</th>
+                <th>참여 내담자</th>
                 <th>시간</th>
                 <th>모드</th>
                 <th>목표</th>
@@ -32,17 +34,15 @@
             {% for session in sessions %}
             <tr>
                 <td>
-                    <a href="/sessions/{{ session.session_id }}" style="color: #3b5998; text-decoration: none; font-weight: 600; display: block; transition: color 0.2s;" 
-                       onmouseover="this.style.color='#2d4373'" 
-                       onmouseout="this.style.color='#3b5998'">
-                        {{ session.date }}
-                    </a>
+                    {{ session.date }}
                 </td>
+                <td>{% if session.session_number %}{{ session.session_number | int }}회차{% else %}-{% endif %}</td>
+                <td>{{ '집단' if session.counseling_type == 'group' else '개별' }}</td>
                 <td>
                     <a href="/sessions/{{ session.session_id }}" style="color: #3b5998; text-decoration: none; font-weight: 600; display: block; transition: color 0.2s;" 
                        onmouseover="this.style.color='#2d4373'" 
                        onmouseout="this.style.color='#3b5998'">
-                        {{ session.name }}
+                        {{ session.participant_display }}
                     </a>
                 </td>
                 <td>{{ session.duration_minutes }}분</td>

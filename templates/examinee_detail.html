@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}{{ examinee.name }} - 수검자 상세{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+    <h2 style="margin: 0;">수검자 상세 - {{ examinee.name }}</h2>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="/examinees/{{ examinee.examinee_id }}/edit" class="btn">정보 수정</a>
+        <form method="POST" action="/examinees/{{ examinee.examinee_id }}/delete" onsubmit="return confirm('정말 삭제하시겠습니까? 수검자 기록이 영구 삭제됩니다.');" style="margin: 0;">
+            <button type="submit" class="btn" style="background-color: #e74c3c;">삭제</button>
+        </form>
+        <a href="/examinees" class="btn btn-secondary">목록으로</a>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h3>기본 정보</h3>
+    <table style="margin: 0;">
+        <tr>
+            <th style="width: 20%;">수검자 이름</th>
+            <td><strong>{{ examinee.name }}</strong></td>
+        </tr>
+        <tr>
+            <th>현재 상태</th>
+            <td>{{ status_labels.get(examinee.status, examinee.status or '-')}} </td>
+        </tr>
+        <tr>
+            <th>출처</th>
+            <td>{{ source_labels.get(examinee.source, examinee.source or '-') }}</td>
+        </tr>
+        <tr>
+            <th>연결된 내담자</th>
+            <td>
+                {% if linked_client %}
+                    <a href="/clients/{{ linked_client.client_id }}" style="color: #3b5998; text-decoration: none;">
+                        {{ linked_client.name }} ({{ linked_client.client_id }})
+                    </a>
+                {% elif examinee.linked_client_id %}
+                    {{ examinee.linked_client_id }}
+                {% else %}
+                    <span style="color: #95a5a6;">연결되지 않음</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>연락처</th>
+            <td>{{ examinee.phone or '-' }}</td>
+        </tr>
+        <tr>
+            <th>이메일</th>
+            <td>{{ examinee.email or '-' }}</td>
+        </tr>
+        <tr>
+            <th>출생연도</th>
+            <td>{{ examinee.birth_year or '-' }}</td>
+        </tr>
+        <tr>
+            <th>성별</th>
+            <td>{{ examinee.gender or '-' }}</td>
+        </tr>
+    </table>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h3>검사 정보</h3>
+    <table style="margin: 0;">
+        <tr>
+            <th style="width: 20%;">검사일</th>
+            <td>{{ examinee.assessment_date or '-' }}</td>
+        </tr>
+        <tr>
+            <th>검사 종류</th>
+            <td>{{ examinee.assessment_type or '-' }}</td>
+        </tr>
+        <tr>
+            <th>검사 도구</th>
+            <td>{{ examinee.assessment_tool or '-' }}</td>
+        </tr>
+        <tr>
+            <th>검사 요약</th>
+            <td style="white-space: pre-wrap;">{{ examinee.assessment_description or '-' }}</td>
+        </tr>
+        <tr>
+            <th>보고서 파일</th>
+            <td>
+                {% if examinee.report_file %}
+                    <a href="/download/examinee_report/{{ examinee.examinee_id }}" style="color: #3b5998; text-decoration: none;">
+                        📄 {{ examinee.report_file }} (다운로드)
+                    </a>
+                {% else %}
+                    <span style="color: #95a5a6;">등록된 파일 없음</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>상담자 메모</th>
+            <td style="white-space: pre-wrap;">{{ examinee.notes or '-' }}</td>
+        </tr>
+    </table>
+</div>
+
+{% if not examinee.linked_client_id %}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h3>내담자 연결</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
+        <div style="flex: 1 1 260px;">
+            <form method="POST" action="/examinees/{{ examinee.examinee_id }}/link-client">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="client_id">기존 내담자 선택</label>
+                    <select id="client_id" name="client_id" required>
+                        <option value="">내담자를 선택하세요</option>
+                        {% for client in clients %}
+                            <option value="{{ client.client_id }}">{{ client.name }} ({{ client.client_id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit">선택한 내담자와 연결</button>
+            </form>
+        </div>
+        <div style="flex: 1 1 260px;">
+            <form method="POST" action="/examinees/{{ examinee.examinee_id }}/create-client">
+                <p style="margin-bottom: 1rem; color: #4b5563;">내담자 정보가 없는 경우, 수검자 정보를 바탕으로 새 내담자를 생성할 수 있습니다.</p>
+                <button type="submit" class="btn btn-secondary">새 내담자 생성 및 연결</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3>관련 상담 회기</h3>
+        {% if linked_client %}
+            <a href="/sessions/new?client_id={{ linked_client.client_id }}" class="btn btn-secondary">새 회기 추가</a>
+        {% endif %}
+    </div>
+    
+    {% if associated_sessions %}
+    <table>
+        <thead>
+            <tr>
+                <th>날짜</th>
+                <th>모드</th>
+                <th>목표</th>
+                <th>관리</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for session in associated_sessions %}
+            <tr>
+                <td><a href="/sessions/{{ session.session_id }}" style="color: #3b5998; text-decoration: none;">{{ session.date }}</a></td>
+                <td>{{ session.mode or '-' }}</td>
+                <td>{{ session.goals[:50] if session.goals else '-' }}{% if session.goals and session.goals|length > 50 %}...{% endif %}</td>
+                <td><a href="/sessions/{{ session.session_id }}" style="color: #27ae60; text-decoration: none;">보기</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #7f8c8d; padding: 1.5rem;">연관된 상담 회기가 없습니다.</p>
+    {% endif %}
+</div>
+{% endblock %}

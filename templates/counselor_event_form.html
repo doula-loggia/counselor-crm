@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}상담자 일정 {{ '수정' if is_edit else '등록' }} - 심리상담사 내담자 관리 시스템{% endblock %}
+
+{% block content %}
+<h2>상담자 일정 {{ '수정' if is_edit else '등록' }}</h2>
+
+<div class="card">
+    <form method="POST" action="{{ form_action }}">
+        <div class="form-group">
+            <label for="title">제목 *</label>
+            <input type="text" id="title" name="title" value="{{ event.title }}" required placeholder="예: 사례회의, 휴가 등">
+        </div>
+
+        <div class="form-group">
+            <label for="counselor">담당 상담자</label>
+            <input type="text" id="counselor" name="counselor" value="{{ event.counselor }}" placeholder="상담자 이름">
+        </div>
+
+        <div class="form-group">
+            <label for="category">일정 구분</label>
+            <select id="category" name="category">
+                {% set categories = [
+                    ('personal', '개인 일정'),
+                    ('meeting', '회의/미팅'),
+                    ('education', '교육/연수'),
+                    ('out_of_office', '외근/휴가'),
+                    ('other', '기타')
+                ] %}
+                {% for value, label in categories %}
+                <option value="{{ value }}" {% if event.category == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="start">시작 일시 *</label>
+            <input type="datetime-local" id="start" name="start" value="{{ event.start_local }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="end">종료 일시</label>
+            <input type="datetime-local" id="end" name="end" value="{{ event.end_local }}">
+            <small style="color: #6b7280; font-size: 0.85rem; margin-top: 0.3rem; display: block;">종료 시간을 비워두면 시작 시간만 표시됩니다.</small>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.6rem;">
+            <input type="checkbox" id="all_day" name="all_day" {% if event.all_day_checked %}checked{% endif %} style="width: 18px; height: 18px;">
+            <label for="all_day" style="margin: 0; font-weight: 500;">하루 종일 일정</label>
+        </div>
+
+        <div class="form-group">
+            <label for="location">장소</label>
+            <input type="text" id="location" name="location" value="{{ event.location }}" placeholder="예: 상담실 A, 온라인 Zoom 등">
+        </div>
+
+        <div class="form-group">
+            <label for="description">메모</label>
+            <textarea id="description" name="description" rows="4" placeholder="추가 안내나 참고 사항을 입력하세요">{{ event.description }}</textarea>
+        </div>
+
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit">{{ submit_label }}</button>
+            <a href="{{ url_for('counselor_events_list') }}" class="btn btn-secondary">목록으로</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
